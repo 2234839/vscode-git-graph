@@ -313,7 +313,7 @@ class Vertex {
 
 	/* Rendering */
 
-	public draw(svg: SVGElement, config: GG.GraphConfig, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
+	public draw(svg: SVGElement, config: GG.GraphConfig, expandOffset: boolean) {
 		if (this.onBranch === null) return;
 
 		const colour = this.isCommitted ? config.colours[this.onBranch.getColourIndex() % config.colours.length] : '#808080';
@@ -343,9 +343,6 @@ class Vertex {
 			innerCircle.setAttribute('class', 'stashInner');
 			svg.appendChild(innerCircle);
 		}
-
-		circle.addEventListener('mouseover', overListener);
-		circle.addEventListener('mouseout', outListener);
 	}
 }
 
@@ -465,14 +462,20 @@ class Graph {
 		let group = document.createElementNS(SVG_NAMESPACE, 'g'), i, contentWidth = this.getContentWidth();
 		group.setAttribute('mask', 'url(#GraphMask)');
 
+		// Append all children to the group before it's inserted into the DOM.
+		// This avoids one reflow per appendChild — only a single reflow occurs
+		// when the completed group is finally attached to the SVG.
 		for (i = 0; i < this.branches.length; i++) {
 			this.branches[i].draw(group, this.config, this.expandedCommitIndex);
 		}
 
-		const overListener = (e: MouseEvent) => this.vertexOver(e), outListener = (e: MouseEvent) => this.vertexOut(e);
 		for (i = 0; i < this.vertices.length; i++) {
-			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.index, overListener, outListener);
+			this.vertices[i].draw(group, this.config, expandedCommit !== null && i > expandedCommit.index);
 		}
+
+		// Event delegation: two listeners on the group instead of 2×N on individual vertices
+		group.addEventListener('mouseover', (e: MouseEvent) => this.vertexOver(e));
+		group.addEventListener('mouseout', (e: MouseEvent) => this.vertexOut(e));
 
 		if (this.group !== null) this.svg.removeChild(this.group);
 		this.svg.appendChild(group);
@@ -871,29 +874,36 @@ class Graph {
 		}
 
 		// Second pass: assign colours to branches
-		// For each branch, find the most relevant head label on its vertices
-		for (let branch of this.branches) {
-			let bestHead: string | null = null;
+		// Build a Branch → best head label map in a single pass over vertices (O(V)),
+		// then apply to each branch in O(B). Avoids the previous O(V×B) nested loop.
+		let branchBestHead = new Map<Branch, string>();
 
-			// Scan vertices to find a head label for this branch
-			for (let i = 0; i < this.vertices.length; i++) {
-				let v = this.vertices[i];
-				if (v.getBranch() === branch) {
-					let commit = this.commits[i];
-					if (commit.heads && commit.heads.length > 0) {
-						// Prefer HEAD branch (commitHead matches) or first head
-						if (commit.hash === this.commitHead) {
-							bestHead = commit.heads[0];
-							break; // HEAD branch is the best match
-						}
-						if (bestHead === null) {
-							bestHead = commit.heads[0];
-						}
-					}
+		for (let i = 0; i < this.vertices.length; i++) {
+			let v = this.vertices[i];
+			let branch = v.getBranch();
+			if (branch === null) continue;
+			// Skip branches that already have their best head (from commitHead match)
+			if (branchBestHead.has(branch)) {
+				// commitHead match is terminal — can't do better
+				let commit = this.commits[i];
+				if (commit.hash === this.commitHead && commit.heads && commit.heads.length > 0) {
+					branchBestHead.set(branch, commit.heads[0]);
+				}
+				continue;
+			}
+			let commit = this.commits[i];
+			if (commit.heads && commit.heads.length > 0) {
+				if (commit.hash === this.commitHead) {
+					branchBestHead.set(branch, commit.heads[0]); // best possible match
+				} else {
+					branchBestHead.set(branch, commit.heads[0]); // first head found
 				}
 			}
+		}
 
-			if (bestHead !== null && bestHead in branchNameColours) {
+		for (let branch of this.branches) {
+			let bestHead = branchBestHead.get(branch);
+			if (bestHead !== undefined && bestHead in branchNameColours) {
 				branch.setColourIndex(branchNameColours[bestHead]);
 			}
 			// else: keep the initial hash-based colourIndex
@@ -905,9 +915,11 @@ class Graph {
 
 	private vertexOver(event: MouseEvent) {
 		if (event.target === null) return;
+		const vertexElem = <HTMLElement>event.target;
+		// Event delegation: only process if the target is a vertex circle (has data-id)
+		if (vertexElem.dataset.id === undefined) return;
 		this.closeTooltip();
 
-		const vertexElem = <HTMLElement>event.target;
 		const id = parseInt(vertexElem.dataset.id!);
 		this.tooltipId = id;
 		const commitElem = findCommitElemWithId(getCommitElems(), id);

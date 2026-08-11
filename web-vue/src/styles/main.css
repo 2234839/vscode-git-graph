@@ -1,0 +1,56 @@
+/* Git Graph WebView 全局样式 */
+
+/* CSS 变量 — 由后端 getHtmlForWebview() 注入的内联 <style> 覆盖 */
+:root {
+  --git-graph-color0: #ff0000;
+  --git-graph-color1: #00ff00;
+  --git-graph-color2: #0000ff;
+  --git-graph-color3: #ff00ff;
+  --git-graph-color4: #ffff00;
+  --git-graph-color5: #00ffff;
+  --git-graph-color6: #ff8800;
+  --git-graph-color7: #8800ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  overflow: hidden;
+  user-select: none;
+}
+
+#view {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+#commitGraph {
+  flex-shrink: 0;
+  position: relative;
+}
+
+#commitTable {
+  flex: 1;
+  overflow-y: auto;
+}
+
+#footer {
+  padding: 4px 8px;
+  border-top: 1px solid var(--vscode-panel-border);
+  text-align: center;
+}
