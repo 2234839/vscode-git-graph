@@ -1,6 +1,6 @@
 {
-	"name": "git-graph-cn",
-	"displayName": "Git Graph 中文版",
+	"name": "git-graph-guseng",
+	"displayName": "Git Graph (Guseng Enhanced)",
 	"version": "1.0.0",
 	"publisher": "gsai",
 	"engine": {
@@ -9,13 +9,13 @@
 	"author": {
 		"name": "gsai"
 	},
-	"description": "查看 Git 分支与标签图谱（Git Graph 中文化增强版）",
+	"description": "Git 仓库可视化 — 稳定分支配色、中文本地化、Vue3 现代化构建",
 	"keywords": [
 		"git",
 		"graph",
 		"可视化",
-		"差异",
-		"中文"
+		"分支",
+		"diff"
 	],
 	"categories": [
 		"Other"
