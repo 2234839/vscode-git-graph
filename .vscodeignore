@@ -16,6 +16,7 @@ resources/icon.bad.png
 src/
 tests/
 web/
+web-vue/
 .eslintrc.json
 .gitignore
 .nvmrc
