@@ -8,7 +8,25 @@ import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, VsCodeVersionRequirement, abbrevCommit, abbrevText, copyToClipboard, doesVersionMeetRequirement, getExtensionVersion, getPathFromUri, getRelativeTimeDiff, getRepoName, getSortedRepositoryPaths, isPathInWorkspace, openFile, resolveToSymbolicPath, showErrorMessage, showInformationMessage } from './utils';
+import {
+	GitExecutable,
+	UNABLE_TO_FIND_GIT_MSG,
+	VsCodeVersionRequirement,
+	abbrevCommit,
+	abbrevText,
+	copyToClipboard,
+	doesVersionMeetRequirement,
+	getExtensionVersion,
+	getPathFromUri,
+	getRelativeTimeDiff,
+	getRepoName,
+	getSortedRepositoryPaths,
+	isPathInWorkspace,
+	openFile,
+	resolveToSymbolicPath,
+	showErrorMessage,
+	showInformationMessage
+} from './utils';
 import { Disposable } from './utils/disposable';
 import { GgEvent } from './utils/event';
 
@@ -16,443 +34,612 @@ import { GgEvent } from './utils/event';
  * Manages the registration and execution of Git Graph Commands.
  */
 export class CommandManager extends Disposable {
-	private readonly context: vscode.ExtensionContext;
-	private readonly avatarManager: AvatarManager;
-	private readonly dataSource: DataSource;
-	private readonly extensionState: ExtensionState;
-	private readonly logger: Logger;
-	private readonly repoManager: RepoManager;
-	private gitExecutable: GitExecutable | null;
+  private readonly context: vscode.ExtensionContext;
+  private readonly avatarManager: AvatarManager;
+  private readonly dataSource: DataSource;
+  private readonly extensionState: ExtensionState;
+  private readonly logger: Logger;
+  private readonly repoManager: RepoManager;
+  private gitExecutable: GitExecutable | null;
 
-	/**
-	 * Creates the Git Graph Command Manager.
-	 * @param extensionPath The absolute file path of the directory containing the extension.
-	 * @param avatarManger The Git Graph AvatarManager instance.
-	 * @param dataSource The Git Graph DataSource instance.
-	 * @param extensionState The Git Graph ExtensionState instance.
-	 * @param repoManager The Git Graph RepoManager instance.
-	 * @param gitExecutable The Git executable available to Git Graph at startup.
-	 * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
-	 * @param logger The Git Graph Logger instance.
-	 */
-	constructor(context: vscode.ExtensionContext, avatarManger: AvatarManager, dataSource: DataSource, extensionState: ExtensionState, repoManager: RepoManager, gitExecutable: GitExecutable | null, onDidChangeGitExecutable: GgEvent<GitExecutable | null>, logger: Logger) {
-		super();
-		this.context = context;
-		this.avatarManager = avatarManger;
-		this.dataSource = dataSource;
-		this.extensionState = extensionState;
-		this.logger = logger;
-		this.repoManager = repoManager;
-		this.gitExecutable = gitExecutable;
+  /**
+   * Creates the Git Graph Command Manager.
+   * @param extensionPath The absolute file path of the directory containing the extension.
+   * @param avatarManger The Git Graph AvatarManager instance.
+   * @param dataSource The Git Graph DataSource instance.
+   * @param extensionState The Git Graph ExtensionState instance.
+   * @param repoManager The Git Graph RepoManager instance.
+   * @param gitExecutable The Git executable available to Git Graph at startup.
+   * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
+   * @param logger The Git Graph Logger instance.
+   */
+  constructor(
+  	context: vscode.ExtensionContext,
+  	avatarManger: AvatarManager,
+  	dataSource: DataSource,
+  	extensionState: ExtensionState,
+  	repoManager: RepoManager,
+  	gitExecutable: GitExecutable | null,
+  	onDidChangeGitExecutable: GgEvent<GitExecutable | null>,
+  	logger: Logger
+  ) {
+  	super();
+  	this.context = context;
+  	this.avatarManager = avatarManger;
+  	this.dataSource = dataSource;
+  	this.extensionState = extensionState;
+  	this.logger = logger;
+  	this.repoManager = repoManager;
+  	this.gitExecutable = gitExecutable;
 
-		// Register Extension Commands
-		this.registerCommand('git-graph.view', (arg) => this.view(arg));
-		this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
-		this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
-		this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
-		this.registerCommand('git-graph.fetch', () => this.fetch());
-		this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () => this.endAllWorkspaceCodeReviews());
-		this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () => this.endSpecificWorkspaceCodeReview());
-		this.registerCommand('git-graph.resumeWorkspaceCodeReview', () => this.resumeWorkspaceCodeReview());
-		this.registerCommand('git-graph.version', () => this.version());
-		this.registerCommand('git-graph.searchCommits', () => this.searchCommits());
-		this.registerCommand('git-graph.openFile', (arg) => this.openFile(arg));
+  	// Register Extension Commands
+  	this.registerCommand('git-graph.view', (arg) => this.view(arg));
+  	this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
+  	this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
+  	this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
+  	this.registerCommand('git-graph.fetch', () => this.fetch());
+  	this.registerCommand('git-graph.endAllWorkspaceCodeReviews', () =>
+  		this.endAllWorkspaceCodeReviews()
+  	);
+  	this.registerCommand('git-graph.endSpecificWorkspaceCodeReview', () =>
+  		this.endSpecificWorkspaceCodeReview()
+  	);
+  	this.registerCommand('git-graph.resumeWorkspaceCodeReview', () =>
+  		this.resumeWorkspaceCodeReview()
+  	);
+  	this.registerCommand('git-graph.version', () => this.version());
+  	this.registerCommand('git-graph.searchCommits', () => this.searchCommits());
+  	this.registerCommand('git-graph.openFile', (arg) => this.openFile(arg));
 
-		this.registerDisposable(
-			onDidChangeGitExecutable((gitExecutable) => {
-				this.gitExecutable = gitExecutable;
-			})
-		);
+  	this.registerDisposable(
+  		onDidChangeGitExecutable((gitExecutable) => {
+  			this.gitExecutable = gitExecutable;
+  		})
+  	);
 
-		// Register Extension Contexts
-		try {
-			this.registerContext('git-graph:codiconsSupported', doesVersionMeetRequirement(vscode.version, VsCodeVersionRequirement.Codicons));
-		} catch (_) {
-			this.logger.logError('Unable to set Visual Studio Code Context "git-graph:codiconsSupported"');
-		}
-	}
+  	// Register Extension Contexts
+  	try {
+  		this.registerContext(
+  			'git-graph:codiconsSupported',
+  			doesVersionMeetRequirement(vscode.version, VsCodeVersionRequirement.Codicons)
+  		);
+  	} catch (_) {
+  		this.logger.logError(
+  			'Unable to set Visual Studio Code Context "git-graph:codiconsSupported"'
+  		);
+  	}
+  }
 
-	/**
-	 * Register a Git Graph command with Visual Studio Code.
-	 * @param command A unique identifier for the command.
-	 * @param callback A command handler function.
-	 */
-	private registerCommand(command: string, callback: (...args: any[]) => any) {
-		this.registerDisposable(
-			vscode.commands.registerCommand(command, (...args: any[]) => {
-				this.logger.log('Command Invoked: ' + command);
-				callback(...args);
-			})
-		);
-	}
+  /**
+   * Register a Git Graph command with Visual Studio Code.
+   * @param command A unique identifier for the command.
+   * @param callback A command handler function.
+   */
+  private registerCommand(command: string, callback: (...args: any[]) => any) {
+  	this.registerDisposable(
+  		vscode.commands.registerCommand(command, (...args: any[]) => {
+  			this.logger.log('Command Invoked: ' + command);
+  			callback(...args);
+  		})
+  	);
+  }
 
-	/**
-	 * Register a context with Visual Studio Code.
-	 * @param key The Context Key.
-	 * @param value The Context Value.
-	 */
-	private registerContext(key: string, value: any) {
-		return vscode.commands.executeCommand('setContext', key, value).then(
-			() => this.logger.log('Successfully set Visual Studio Code Context "' + key + '" to "' + JSON.stringify(value) + '"'),
-			() => this.logger.logError('Failed to set Visual Studio Code Context "' + key + '" to "' + JSON.stringify(value) + '"')
-		);
-	}
+  /**
+   * Register a context with Visual Studio Code.
+   * @param key The Context Key.
+   * @param value The Context Value.
+   */
+  private registerContext(key: string, value: any) {
+  	return vscode.commands.executeCommand('setContext', key, value).then(
+  		() =>
+  			this.logger.log(
+  				'Successfully set Visual Studio Code Context "' +
+            key +
+            '" to "' +
+            JSON.stringify(value) +
+            '"'
+  			),
+  		() =>
+  			this.logger.logError(
+  				'Failed to set Visual Studio Code Context "' +
+            key +
+            '" to "' +
+            JSON.stringify(value) +
+            '"'
+  			)
+  	);
+  }
 
+  /* Commands */
 
-	/* Commands */
+  /**
+   * The method run when the `git-graph.view` command is invoked.
+   * @param arg An optional argument passed to the command (when invoked from the Visual Studio Code Git Extension).
+   */
+  private async view(arg: any) {
+  	let loadRepo: string | null = null;
 
-	/**
-	 * The method run when the `git-graph.view` command is invoked.
-	 * @param arg An optional argument passed to the command (when invoked from the Visual Studio Code Git Extension).
-	 */
-	private async view(arg: any) {
-		let loadRepo: string | null = null;
+  	if (typeof arg === 'object' && arg.rootUri) {
+  		// If command is run from the Visual Studio Code Source Control View, load the specific repo
+  		const repoPath = getPathFromUri(arg.rootUri);
+  		loadRepo = await this.repoManager.getKnownRepo(repoPath);
+  		if (loadRepo === null) {
+  			// The repo is not currently known, add it
+  			loadRepo = (
+  				await this.repoManager.registerRepo(await resolveToSymbolicPath(repoPath), true)
+  			).root;
+  		}
+  	} else if (
+  		getConfig().openToTheRepoOfTheActiveTextEditorDocument &&
+      vscode.window.activeTextEditor
+  	) {
+  		// If the config setting is enabled, load the repo containing the active text editor document
+  		loadRepo = this.repoManager.getRepoContainingFile(
+  			getPathFromUri(vscode.window.activeTextEditor.document.uri)
+  		);
+  	}
 
-		if (typeof arg === 'object' && arg.rootUri) {
-			// If command is run from the Visual Studio Code Source Control View, load the specific repo
-			const repoPath = getPathFromUri(arg.rootUri);
-			loadRepo = await this.repoManager.getKnownRepo(repoPath);
-			if (loadRepo === null) {
-				// The repo is not currently known, add it
-				loadRepo = (await this.repoManager.registerRepo(await resolveToSymbolicPath(repoPath), true)).root;
-			}
-		} else if (getConfig().openToTheRepoOfTheActiveTextEditorDocument && vscode.window.activeTextEditor) {
-			// If the config setting is enabled, load the repo containing the active text editor document
-			loadRepo = this.repoManager.getRepoContainingFile(getPathFromUri(vscode.window.activeTextEditor.document.uri));
-		}
+  	GitGraphView.createOrShow(
+  		this.context.extensionPath,
+  		this.dataSource,
+  		this.extensionState,
+  		this.avatarManager,
+  		this.repoManager,
+  		this.logger,
+  		loadRepo !== null ? { repo: loadRepo } : null
+  	);
+  }
 
-		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo } : null);
-	}
+  /**
+   * The method run when the `git-graph.addGitRepository` command is invoked.
+   */
+  private addGitRepository() {
+  	if (this.gitExecutable === null) {
+  		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+  		return;
+  	}
 
-	/**
-	 * The method run when the `git-graph.addGitRepository` command is invoked.
-	 */
-	private addGitRepository() {
-		if (this.gitExecutable === null) {
-			showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-			return;
-		}
+  	vscode.window
+  		.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false })
+  		.then(
+  			(uris) => {
+  				if (uris && uris.length > 0) {
+  					let path = getPathFromUri(uris[0]);
+  					if (isPathInWorkspace(path)) {
+  						this.repoManager.registerRepo(path, false).then((status) => {
+  							if (status.error === null) {
+  								showInformationMessage('仓库 "' + status.root! + '" 已添加到 Git Graph。');
+  							} else {
+  								showErrorMessage(status.error + ' 因此无法将其添加到 Git Graph。');
+  							}
+  						});
+  					} else {
+  						showErrorMessage(
+  							'文件夹 "' +
+                  path +
+                  '" 不在当前打开的 Visual Studio Code 工作区内，因此无法添加到 Git Graph。'
+  						);
+  					}
+  				}
+  			},
+  			() => {}
+  		);
+  }
 
-		vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false }).then(uris => {
-			if (uris && uris.length > 0) {
-				let path = getPathFromUri(uris[0]);
-				if (isPathInWorkspace(path)) {
-					this.repoManager.registerRepo(path, false).then(status => {
-						if (status.error === null) {
-							showInformationMessage('The repository "' + status.root! + '" was added to Git Graph.');
-						} else {
-							showErrorMessage(status.error + ' Therefore it could not be added to Git Graph.');
-						}
-					});
-				} else {
-					showErrorMessage('The folder "' + path + '" is not within the opened Visual Studio Code workspace, and therefore could not be added to Git Graph.');
-				}
-			}
-		}, () => { });
-	}
+  /**
+   * The method run when the `git-graph.removeGitRepository` command is invoked.
+   */
+  private removeGitRepository() {
+  	if (this.gitExecutable === null) {
+  		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+  		return;
+  	}
 
-	/**
-	 * The method run when the `git-graph.removeGitRepository` command is invoked.
-	 */
-	private removeGitRepository() {
-		if (this.gitExecutable === null) {
-			showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-			return;
-		}
+  	const repos = this.repoManager.getRepos();
+  	const items: vscode.QuickPickItem[] = getSortedRepositoryPaths(
+  		repos,
+  		getConfig().repoDropdownOrder
+  	).map((path) => ({
+  		label: repos[path].name || getRepoName(path),
+  		description: path
+  	}));
 
-		const repos = this.repoManager.getRepos();
-		const items: vscode.QuickPickItem[] = getSortedRepositoryPaths(repos, getConfig().repoDropdownOrder).map((path) => ({
-			label: repos[path].name || getRepoName(path),
-			description: path
-		}));
+  	vscode.window
+  		.showQuickPick(items, {
+  			placeHolder: '选择要从 Git Graph 中移除的仓库：',
+  			canPickMany: false
+  		})
+  		.then(
+  			(item) => {
+  				if (item && item.description !== undefined) {
+  					if (this.repoManager.ignoreRepo(item.description)) {
+  						showInformationMessage('仓库 "' + item.label + '" 已从 Git Graph 中移除。');
+  					} else {
+  						showErrorMessage('Git Graph 不识别仓库 "' + item.label + '"。');
+  					}
+  				}
+  			},
+  			() => {}
+  		);
+  }
 
-		vscode.window.showQuickPick(items, {
-			placeHolder: 'Select a repository to remove from Git Graph:',
-			canPickMany: false
-		}).then((item) => {
-			if (item && item.description !== undefined) {
-				if (this.repoManager.ignoreRepo(item.description)) {
-					showInformationMessage('The repository "' + item.label + '" was removed from Git Graph.');
-				} else {
-					showErrorMessage('The repository "' + item.label + '" is not known to Git Graph.');
-				}
-			}
-		}, () => { });
-	}
+  /**
+   * The method run when the `git-graph.clearAvatarCache` command is invoked.
+   */
+  private clearAvatarCache() {
+  	this.avatarManager.clearCache().then(
+  		(errorInfo) => {
+  			if (errorInfo === null) {
+  				showInformationMessage('头像缓存已成功清除。');
+  			} else {
+  				showErrorMessage(errorInfo);
+  			}
+  		},
+  		() => {
+  			showErrorMessage('运行命令"清除头像缓存"时发生意外错误。');
+  		}
+  	);
+  }
 
-	/**
-	 * The method run when the `git-graph.clearAvatarCache` command is invoked.
-	 */
-	private clearAvatarCache() {
-		this.avatarManager.clearCache().then((errorInfo) => {
-			if (errorInfo === null) {
-				showInformationMessage('The Avatar Cache was successfully cleared.');
-			} else {
-				showErrorMessage(errorInfo);
-			}
-		}, () => {
-			showErrorMessage('An unexpected error occurred while running the command "Clear Avatar Cache".');
-		});
-	}
+  /**
+   * The method run when the `git-graph.fetch` command is invoked.
+   */
+  private fetch() {
+  	const repos = this.repoManager.getRepos();
+  	const repoPaths = getSortedRepositoryPaths(repos, getConfig().repoDropdownOrder);
 
-	/**
-	 * The method run when the `git-graph.fetch` command is invoked.
-	 */
-	private fetch() {
-		const repos = this.repoManager.getRepos();
-		const repoPaths = getSortedRepositoryPaths(repos, getConfig().repoDropdownOrder);
+  	if (repoPaths.length > 1) {
+  		const items: vscode.QuickPickItem[] = repoPaths.map((path) => ({
+  			label: repos[path].name || getRepoName(path),
+  			description: path
+  		}));
 
-		if (repoPaths.length > 1) {
-			const items: vscode.QuickPickItem[] = repoPaths.map((path) => ({
-				label: repos[path].name || getRepoName(path),
-				description: path
-			}));
+  		const lastActiveRepo = this.extensionState.getLastActiveRepo();
+  		if (lastActiveRepo !== null) {
+  			let lastActiveRepoIndex = items.findIndex((item) => item.description === lastActiveRepo);
+  			if (lastActiveRepoIndex > -1) {
+  				const item = items.splice(lastActiveRepoIndex, 1)[0];
+  				items.unshift(item);
+  			}
+  		}
 
-			const lastActiveRepo = this.extensionState.getLastActiveRepo();
-			if (lastActiveRepo !== null) {
-				let lastActiveRepoIndex = items.findIndex((item) => item.description === lastActiveRepo);
-				if (lastActiveRepoIndex > -1) {
-					const item = items.splice(lastActiveRepoIndex, 1)[0];
-					items.unshift(item);
-				}
-			}
+  		vscode.window
+  			.showQuickPick(items, {
+  				placeHolder: '选择要在 Git Graph 中打开并从远程获取的仓库：',
+  				canPickMany: false
+  			})
+  			.then(
+  				(item) => {
+  					if (item && item.description) {
+  						GitGraphView.createOrShow(
+  							this.context.extensionPath,
+  							this.dataSource,
+  							this.extensionState,
+  							this.avatarManager,
+  							this.repoManager,
+  							this.logger,
+  							{
+  								repo: item.description,
+  								runCommandOnLoad: 'fetch'
+  							}
+  						);
+  					}
+  				},
+  				() => {
+  					showErrorMessage('运行命令"从远程获取"时发生意外错误。');
+  				}
+  			);
+  	} else if (repoPaths.length === 1) {
+  		GitGraphView.createOrShow(
+  			this.context.extensionPath,
+  			this.dataSource,
+  			this.extensionState,
+  			this.avatarManager,
+  			this.repoManager,
+  			this.logger,
+  			{
+  				repo: repoPaths[0],
+  				runCommandOnLoad: 'fetch'
+  			}
+  		);
+  	} else {
+  		GitGraphView.createOrShow(
+  			this.context.extensionPath,
+  			this.dataSource,
+  			this.extensionState,
+  			this.avatarManager,
+  			this.repoManager,
+  			this.logger,
+  			null
+  		);
+  	}
+  }
 
-			vscode.window.showQuickPick(items, {
-				placeHolder: 'Select the repository you want to open in Git Graph, and fetch from remote(s):',
-				canPickMany: false
-			}).then((item) => {
-				if (item && item.description) {
-					GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
-						repo: item.description,
-						runCommandOnLoad: 'fetch'
-					});
-				}
-			}, () => {
-				showErrorMessage('An unexpected error occurred while running the command "Fetch from Remote(s)".');
-			});
-		} else if (repoPaths.length === 1) {
-			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
-				repo: repoPaths[0],
-				runCommandOnLoad: 'fetch'
-			});
-		} else {
-			GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, null);
-		}
-	}
+  /**
+   * The method run when the `git-graph.endAllWorkspaceCodeReviews` command is invoked.
+   */
+  private endAllWorkspaceCodeReviews() {
+  	this.extensionState.endAllWorkspaceCodeReviews();
+  	showInformationMessage('已结束工作区中的所有代码审查');
+  }
 
-	/**
-	 * The method run when the `git-graph.endAllWorkspaceCodeReviews` command is invoked.
-	 */
-	private endAllWorkspaceCodeReviews() {
-		this.extensionState.endAllWorkspaceCodeReviews();
-		showInformationMessage('Ended All Code Reviews in Workspace');
-	}
+  /**
+   * The method run when the `git-graph.endSpecificWorkspaceCodeReview` command is invoked.
+   */
+  private endSpecificWorkspaceCodeReview() {
+  	const codeReviews = this.extensionState.getCodeReviews();
+  	if (Object.keys(codeReviews).length === 0) {
+  		showErrorMessage('当前工作区中没有正在进行的代码审查。');
+  		return;
+  	}
 
-	/**
-	 * The method run when the `git-graph.endSpecificWorkspaceCodeReview` command is invoked.
-	 */
-	private endSpecificWorkspaceCodeReview() {
-		const codeReviews = this.extensionState.getCodeReviews();
-		if (Object.keys(codeReviews).length === 0) {
-			showErrorMessage('There are no Code Reviews in progress within the current workspace.');
-			return;
-		}
+  	vscode.window
+  		.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
+  			placeHolder: '选择要结束的代码审查：',
+  			canPickMany: false
+  		})
+  		.then(
+  			(item) => {
+  				if (item) {
+  					this.extensionState.endCodeReview(item.codeReviewRepo, item.codeReviewId).then(
+  						(errorInfo) => {
+  							if (errorInfo === null) {
+  								showInformationMessage('已成功结束代码审查"' + item.label + '"。');
+  							} else {
+  								showErrorMessage(errorInfo);
+  							}
+  						},
+  						() => {}
+  					);
+  				}
+  			},
+  			() => {
+  				showErrorMessage('运行命令"结束工作区中的特定代码审查..."时发生意外错误。');
+  			}
+  		);
+  }
 
-		vscode.window.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
-			placeHolder: 'Select the Code Review you want to end:',
-			canPickMany: false
-		}).then((item) => {
-			if (item) {
-				this.extensionState.endCodeReview(item.codeReviewRepo, item.codeReviewId).then((errorInfo) => {
-					if (errorInfo === null) {
-						showInformationMessage('Successfully ended Code Review "' + item.label + '".');
-					} else {
-						showErrorMessage(errorInfo);
-					}
-				}, () => { });
-			}
-		}, () => {
-			showErrorMessage('An unexpected error occurred while running the command "End a specific Code Review in Workspace...".');
-		});
-	}
+  /**
+   * The method run when the `git-graph.resumeWorkspaceCodeReview` command is invoked.
+   */
+  private resumeWorkspaceCodeReview() {
+  	const codeReviews = this.extensionState.getCodeReviews();
+  	if (Object.keys(codeReviews).length === 0) {
+  		showErrorMessage('当前工作区中没有正在进行的代码审查。');
+  		return;
+  	}
 
-	/**
-	 * The method run when the `git-graph.resumeWorkspaceCodeReview` command is invoked.
-	 */
-	private resumeWorkspaceCodeReview() {
-		const codeReviews = this.extensionState.getCodeReviews();
-		if (Object.keys(codeReviews).length === 0) {
-			showErrorMessage('There are no Code Reviews in progress within the current workspace.');
-			return;
-		}
+  	vscode.window
+  		.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
+  			placeHolder: '选择要恢复的代码审查：',
+  			canPickMany: false
+  		})
+  		.then(
+  			(item) => {
+  				if (item) {
+  					const commitHashes = item.codeReviewId.split('-');
+  					GitGraphView.createOrShow(
+  						this.context.extensionPath,
+  						this.dataSource,
+  						this.extensionState,
+  						this.avatarManager,
+  						this.repoManager,
+  						this.logger,
+  						{
+  							repo: item.codeReviewRepo,
+  							commitDetails: {
+  								commitHash: commitHashes[commitHashes.length > 1 ? 1 : 0],
+  								compareWithHash: commitHashes.length > 1 ? commitHashes[0] : null
+  							}
+  						}
+  					);
+  				}
+  			},
+  			() => {
+  				showErrorMessage('运行命令"恢复工作区中的特定代码审查..."时发生意外错误。');
+  			}
+  		);
+  }
 
-		vscode.window.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
-			placeHolder: 'Select the Code Review you want to resume:',
-			canPickMany: false
-		}).then((item) => {
-			if (item) {
-				const commitHashes = item.codeReviewId.split('-');
-				GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
-					repo: item.codeReviewRepo,
-					commitDetails: {
-						commitHash: commitHashes[commitHashes.length > 1 ? 1 : 0],
-						compareWithHash: commitHashes.length > 1 ? commitHashes[0] : null
-					}
-				});
-			}
-		}, () => {
-			showErrorMessage('An unexpected error occurred while running the command "Resume a specific Code Review in Workspace...".');
-		});
-	}
+  /**
+   * The method run when the `git-graph.version` command is invoked.
+   */
+  /**
+   * The method run when the `git-graph.searchCommits` command is invoked.
+   */
+  private async searchCommits() {
+  	if (this.gitExecutable === null) {
+  		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
+  		return;
+  	}
+  	const repos = this.repoManager.getRepos();
+  	const repoOptions = Object.keys(repos).sort();
+  	if (repoOptions.length === 0) return;
 
-	/**
-	 * The method run when the `git-graph.version` command is invoked.
-	 */
-	/**
-	 * The method run when the `git-graph.searchCommits` command is invoked.
-	 */
-	private async searchCommits() {
-		if (this.gitExecutable === null) {
-			showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-			return;
-		}
-		const repos = this.repoManager.getRepos();
-		const repoOptions = Object.keys(repos).sort();
-		if (repoOptions.length === 0) return;
+  	let repo: string;
+  	if (repoOptions.length === 1) {
+  		repo = repoOptions[0];
+  	} else {
+  		const selectedRepo = await vscode.window.showQuickPick(repoOptions, {
+  			placeHolder: '选择要搜索的仓库'
+  		});
+  		if (!selectedRepo) return;
+  		repo = selectedRepo;
+  	}
 
-		let repo: string;
-		if (repoOptions.length === 1) {
-			repo = repoOptions[0];
-		} else {
-			const selectedRepo = await vscode.window.showQuickPick(repoOptions, { placeHolder: 'Select the repository to search in' });
-			if (!selectedRepo) return;
-			repo = selectedRepo;
-		}
+  	const query = await vscode.window.showInputBox({
+  		prompt: '按提交消息、作者或哈希值搜索提交历史（支持正则表达式）',
+  		placeHolder: '输入搜索关键词'
+  	});
+  	if (typeof query !== 'string' || query.trim() === '') return;
 
-		const query = await vscode.window.showInputBox({
-			prompt: 'Search commit history by message, author, or hash (supports regex)',
-			placeHolder: 'Enter your search query'
-		});
-		if (typeof query !== 'string' || query.trim() === '') return;
+  	try {
+  		const commits = await this.dataSource.searchHistory(repo, query.trim());
+  		if (commits.length === 0) {
+  			vscode.window.showInformationMessage('未找到匹配该查询的提交。');
+  			return;
+  		}
+  		const items = commits.map((c) => ({
+  			label: c.hash.substring(0, 8),
+  			description: c.message,
+  			detail: c.author + ' - ' + new Date(c.date * 1000).toLocaleString(),
+  			commitHash: c.hash
+  		}));
+  		const selected = await vscode.window.showQuickPick(items, {
+  			placeHolder: '选择要在 Git Graph 中查看的提交',
+  			matchOnDescription: true,
+  			matchOnDetail: true
+  		});
+  		if (selected) {
+  			GitGraphView.createOrShow(
+  				this.context.extensionPath,
+  				this.dataSource,
+  				this.extensionState,
+  				this.avatarManager,
+  				this.repoManager,
+  				this.logger,
+  				{ repo: repo, findCommitHash: selected.commitHash }
+  			);
+  		}
+  	} catch (err) {
+  		showErrorMessage('搜索提交历史时出错。');
+  	}
+  }
 
-		try {
-			const commits = await this.dataSource.searchHistory(repo, query.trim());
-			if (commits.length === 0) {
-				vscode.window.showInformationMessage('No commits found matching the query.');
-				return;
-			}
-			const items = commits.map(c => ({
-				label: c.hash.substring(0, 8),
-				description: c.message,
-				detail: c.author + ' - ' + new Date(c.date * 1000).toLocaleString(),
-				commitHash: c.hash
-			}));
-			const selected = await vscode.window.showQuickPick(items, {
-				placeHolder: 'Select a commit to view in Git Graph',
-				matchOnDescription: true,
-				matchOnDetail: true
-			});
-			if (selected) {
-				GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, { repo: repo, findCommitHash: selected.commitHash });
-			}
-		} catch (err) {
-			showErrorMessage('Error searching commit history.');
-		}
-	}
+  private async version() {
+  	try {
+  		const gitGraphVersion = await getExtensionVersion(this.context);
+  		const information =
+        'Git Graph: ' +
+        gitGraphVersion +
+        '\nVisual Studio Code: ' +
+        vscode.version +
+        '\n操作系统: ' +
+        os.type() +
+        ' ' +
+        os.arch() +
+        ' ' +
+        os.release() +
+        '\nGit: ' +
+        (this.gitExecutable !== null ? this.gitExecutable.version : '(无)');
+  		vscode.window.showInformationMessage(information, { modal: true }, '复制').then(
+  			(selectedItem) => {
+  				if (selectedItem === '复制') {
+  					copyToClipboard(information).then((result) => {
+  						if (result !== null) {
+  							showErrorMessage(result);
+  						}
+  					});
+  				}
+  			},
+  			() => {}
+  		);
+  	} catch (_) {
+  		showErrorMessage('获取版本信息时发生意外错误。');
+  	}
+  }
 
-	private async version() {
-		try {
-			const gitGraphVersion = await getExtensionVersion(this.context);
-			const information = 'Git Graph: ' + gitGraphVersion + '\nVisual Studio Code: ' + vscode.version + '\nOS: ' + os.type() + ' ' + os.arch() + ' ' + os.release() + '\nGit: ' + (this.gitExecutable !== null ? this.gitExecutable.version : '(none)');
-			vscode.window.showInformationMessage(information, { modal: true }, 'Copy').then((selectedItem) => {
-				if (selectedItem === 'Copy') {
-					copyToClipboard(information).then((result) => {
-						if (result !== null) {
-							showErrorMessage(result);
-						}
-					});
-				}
-			}, () => { });
-		} catch (_) {
-			showErrorMessage('An unexpected error occurred while retrieving version information.');
-		}
-	}
+  /**
+   * Opens a file in Visual Studio Code, based on a Git Graph URI (from the Diff View).
+   * The method run when the `git-graph.openFile` command is invoked.
+   * @param arg The Git Graph URI.
+   */
+  private openFile(arg?: vscode.Uri) {
+  	const uri = arg || vscode.window.activeTextEditor?.document.uri;
+  	if (typeof uri === 'object' && uri && uri.scheme === DiffDocProvider.scheme) {
+  		// A Git Graph URI has been provided
+  		const request = decodeDiffDocUri(uri);
+  		return openFile(
+  			request.repo,
+  			request.filePath,
+  			request.commit,
+  			this.dataSource,
+  			vscode.ViewColumn.Active
+  		).then((errorInfo) => {
+  			if (errorInfo !== null) {
+  				return showErrorMessage('无法打开文件：' + errorInfo);
+  			}
+  		});
+  	} else {
+  		return showErrorMessage('无法打开文件：该命令未使用所需参数调用。');
+  	}
+  }
 
-	/**
-	 * Opens a file in Visual Studio Code, based on a Git Graph URI (from the Diff View).
-	 * The method run when the `git-graph.openFile` command is invoked.
-	 * @param arg The Git Graph URI.
-	 */
-	private openFile(arg?: vscode.Uri) {
-		const uri = arg || vscode.window.activeTextEditor?.document.uri;
-		if (typeof uri === 'object' && uri && uri.scheme === DiffDocProvider.scheme) {
-			// A Git Graph URI has been provided
-			const request = decodeDiffDocUri(uri);
-			return openFile(request.repo, request.filePath, request.commit, this.dataSource, vscode.ViewColumn.Active).then((errorInfo) => {
-				if (errorInfo !== null) {
-					return showErrorMessage('Unable to Open File: ' + errorInfo);
-				}
-			});
-		} else {
-			return showErrorMessage('Unable to Open File: The command was not called with the required arguments.');
-		}
-	}
+  /* Helper Methods */
 
+  /**
+   * Transform a set of Code Reviews into a list of Quick Pick items for use with `vscode.window.showQuickPick`.
+   * @param codeReviews A set of Code Reviews.
+   * @returns A list of Quick Pick items.
+   */
+  private getCodeReviewQuickPickItems(
+  	codeReviews: CodeReviews
+  ): Promise<CodeReviewQuickPickItem[]> {
+  	const repos = this.repoManager.getRepos();
+  	const enrichedCodeReviews: {
+      repo: string;
+      id: string;
+      review: CodeReviewData;
+      fromCommitHash: string;
+      toCommitHash: string;
+    }[] = [];
+  	const fetchCommits: { repo: string; commitHash: string }[] = [];
 
-	/* Helper Methods */
+  	Object.keys(codeReviews).forEach((repo) => {
+  		if (typeof repos[repo] === 'undefined') return;
+  		Object.keys(codeReviews[repo]).forEach((id) => {
+  			const commitHashes = id.split('-');
+  			commitHashes.forEach((commitHash) =>
+  				fetchCommits.push({ repo: repo, commitHash: commitHash })
+  			);
+  			enrichedCodeReviews.push({
+  				repo: repo,
+  				id: id,
+  				review: codeReviews[repo][id],
+  				fromCommitHash: commitHashes[0],
+  				toCommitHash: commitHashes[commitHashes.length > 1 ? 1 : 0]
+  			});
+  		});
+  	});
 
-	/**
-	 * Transform a set of Code Reviews into a list of Quick Pick items for use with `vscode.window.showQuickPick`.
-	 * @param codeReviews A set of Code Reviews.
-	 * @returns A list of Quick Pick items.
-	 */
-	private getCodeReviewQuickPickItems(codeReviews: CodeReviews): Promise<CodeReviewQuickPickItem[]> {
-		const repos = this.repoManager.getRepos();
-		const enrichedCodeReviews: { repo: string, id: string, review: CodeReviewData, fromCommitHash: string, toCommitHash: string }[] = [];
-		const fetchCommits: { repo: string, commitHash: string }[] = [];
+  	return Promise.all(
+  		fetchCommits.map((fetch) => this.dataSource.getCommitSubject(fetch.repo, fetch.commitHash))
+  	).then((subjects) => {
+  		const commitSubjects: { [repo: string]: { [commitHash: string]: string } } = {};
+  		subjects.forEach((subject, i) => {
+  			if (typeof commitSubjects[fetchCommits[i].repo] === 'undefined') {
+  				commitSubjects[fetchCommits[i].repo] = {};
+  			}
+  			commitSubjects[fetchCommits[i].repo][fetchCommits[i].commitHash] =
+          subject !== null ? subject : '<未知提交主题>';
+  		});
 
-		Object.keys(codeReviews).forEach((repo) => {
-			if (typeof repos[repo] === 'undefined') return;
-			Object.keys(codeReviews[repo]).forEach((id) => {
-				const commitHashes = id.split('-');
-				commitHashes.forEach((commitHash) => fetchCommits.push({ repo: repo, commitHash: commitHash }));
-				enrichedCodeReviews.push({
-					repo: repo, id: id, review: codeReviews[repo][id],
-					fromCommitHash: commitHashes[0], toCommitHash: commitHashes[commitHashes.length > 1 ? 1 : 0]
-				});
-			});
-		});
-
-		return Promise.all(fetchCommits.map((fetch) => this.dataSource.getCommitSubject(fetch.repo, fetch.commitHash))).then(
-			(subjects) => {
-				const commitSubjects: { [repo: string]: { [commitHash: string]: string } } = {};
-				subjects.forEach((subject, i) => {
-					if (typeof commitSubjects[fetchCommits[i].repo] === 'undefined') {
-						commitSubjects[fetchCommits[i].repo] = {};
-					}
-					commitSubjects[fetchCommits[i].repo][fetchCommits[i].commitHash] = subject !== null ? subject : '<Unknown Commit Subject>';
-				});
-
-				return enrichedCodeReviews.sort((a, b) => b.review.lastActive - a.review.lastActive).map((codeReview) => {
-					const fromSubject = commitSubjects[codeReview.repo][codeReview.fromCommitHash];
-					const toSubject = commitSubjects[codeReview.repo][codeReview.toCommitHash];
-					const isComparison = codeReview.fromCommitHash !== codeReview.toCommitHash;
-					return {
-						codeReviewRepo: codeReview.repo,
-						codeReviewId: codeReview.id,
-						label: (repos[codeReview.repo].name || getRepoName(codeReview.repo)) + ': ' + abbrevCommit(codeReview.fromCommitHash) + (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
-						description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
-						detail: isComparison
-							? abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)
-							: fromSubject
-					};
-				});
-			}
-		);
-	}
+  		return enrichedCodeReviews
+  			.sort((a, b) => b.review.lastActive - a.review.lastActive)
+  			.map((codeReview) => {
+  				const fromSubject = commitSubjects[codeReview.repo][codeReview.fromCommitHash];
+  				const toSubject = commitSubjects[codeReview.repo][codeReview.toCommitHash];
+  				const isComparison = codeReview.fromCommitHash !== codeReview.toCommitHash;
+  				return {
+  					codeReviewRepo: codeReview.repo,
+  					codeReviewId: codeReview.id,
+  					label:
+              (repos[codeReview.repo].name || getRepoName(codeReview.repo)) +
+              ': ' +
+              abbrevCommit(codeReview.fromCommitHash) +
+              (isComparison ? ' ↔ ' + abbrevCommit(codeReview.toCommitHash) : ''),
+  					description: getRelativeTimeDiff(Math.round(codeReview.review.lastActive / 1000)),
+  					detail:
+              isComparison ?
+              	abbrevText(fromSubject, 50) + ' ↔ ' + abbrevText(toSubject, 50)
+              	: fromSubject
+  				};
+  			});
+  	});
+  }
 }
 
 interface CodeReviewQuickPickItem extends vscode.QuickPickItem {
-	codeReviewRepo: string;
-	codeReviewId: string;
+  codeReviewRepo: string;
+  codeReviewId: string;
 }

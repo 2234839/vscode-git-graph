@@ -1,5 +1,8 @@
 .github/
 .vscode/
+.codegraph/
+.gemini/
+Task.md
 coverage/
 node_modules/*/*.md
 out/**/*.d.ts

@@ -9,7 +9,14 @@ import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
-import { GitExecutable, UNABLE_TO_FIND_GIT_MSG, findGit, getGitExecutableFromPaths, showErrorMessage, showInformationMessage } from './utils';
+import {
+	GitExecutable,
+	UNABLE_TO_FIND_GIT_MSG,
+	findGit,
+	getGitExecutableFromPaths,
+	showErrorMessage,
+	showInformationMessage
+} from './utils';
 import { EventEmitter } from './utils/event';
 
 /**
@@ -39,11 +46,30 @@ export async function activate(context: vscode.ExtensionContext) {
 	const configurationEmitter = new EventEmitter<vscode.ConfigurationChangeEvent>();
 	const onDidChangeConfiguration = configurationEmitter.subscribe;
 
-	const dataSource = new DataSource(gitExecutable, onDidChangeConfiguration, onDidChangeGitExecutable, logger);
+	const dataSource = new DataSource(
+		gitExecutable,
+		onDidChangeConfiguration,
+		onDidChangeGitExecutable,
+		logger
+	);
 	const avatarManager = new AvatarManager(dataSource, extensionState, logger);
 	const repoManager = new RepoManager(dataSource, extensionState, onDidChangeConfiguration, logger);
-	const statusBarItem = new StatusBarItem(repoManager.getNumRepos(), repoManager.onDidChangeRepos, onDidChangeConfiguration, logger);
-	const commandManager = new CommandManager(context, avatarManager, dataSource, extensionState, repoManager, gitExecutable, onDidChangeGitExecutable, logger);
+	const statusBarItem = new StatusBarItem(
+		repoManager.getNumRepos(),
+		repoManager.onDidChangeRepos,
+		onDidChangeConfiguration,
+		logger
+	);
+	const commandManager = new CommandManager(
+		context,
+		avatarManager,
+		dataSource,
+		extensionState,
+		repoManager,
+		gitExecutable,
+		onDidChangeGitExecutable,
+		logger
+	);
 	const diffDocProvider = new DiffDocProvider(dataSource);
 
 	context.subscriptions.push(
@@ -55,17 +81,32 @@ export async function activate(context: vscode.ExtensionContext) {
 				const paths = getConfig().gitPaths;
 				if (paths.length === 0) return;
 
-				getGitExecutableFromPaths(paths).then((gitExecutable) => {
-					gitExecutableEmitter.emit(gitExecutable);
-					const msg = 'Git Graph is now using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')';
-					showInformationMessage(msg);
-					logger.log(msg);
-					repoManager.searchWorkspaceForRepos();
-				}, () => {
-					const msg = 'The new value of "git.path" ("' + paths.join('", "') + '") does not ' + (paths.length > 1 ? 'contain a string that matches' : 'match') + ' the path and filename of a valid Git executable.';
-					showErrorMessage(msg);
-					logger.logError(msg);
-				});
+				getGitExecutableFromPaths(paths).then(
+					(gitExecutable) => {
+						gitExecutableEmitter.emit(gitExecutable);
+						const msg =
+              'Git Graph 现在使用 ' +
+              gitExecutable.path +
+              '（版本：' +
+              gitExecutable.version +
+              '）';
+						showInformationMessage(msg);
+						logger.log(msg);
+						repoManager.searchWorkspaceForRepos();
+					},
+					() => {
+						const msg =
+              '"git.path" 的新值（"' +
+              paths.join('", "') +
+              '"）' +
+              (paths.length > 1 ?
+              	'不包含与有效 Git 可执行文件路径和文件名匹配的字符串'
+              	: '与有效 Git 可执行文件的路径和文件名不匹配') +
+              '。';
+						showErrorMessage(msg);
+						logger.logError(msg);
+					}
+				);
 			}
 		}),
 		diffDocProvider,
@@ -82,10 +123,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	logger.log('Started Git Graph - Ready to use!');
 
 	extensionState.expireOldCodeReviews();
-	onStartUp(context).catch(() => { });
+	onStartUp(context).catch(() => {});
 }
 
 /**
  * Deactivate Git Graph.
  */
-export function deactivate() { }
+export function deactivate() {}
