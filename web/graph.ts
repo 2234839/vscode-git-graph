@@ -37,8 +37,8 @@ type VertexOrNull = Vertex | null;
 
 class Branch {
 	private readonly colour: number;
-	/** 稳定颜色索引，基于分支起始 commit hash 确定性计算 */
-	private readonly colourIndex: number;
+	/** 稳定颜色索引，初始基于分支起始 commit hash，后处理阶段根据分支名修正 */
+	private colourIndex: number;
 	private end: number = 0;
 	private lines: Line[] = [];
 	private numUncommitted: number = 0;
@@ -67,6 +67,11 @@ class Branch {
 	/** 获取用于渲染的稳定颜色索引 */
 	public getColourIndex() {
 		return this.colourIndex;
+	}
+
+	/** 后处理阶段设置颜色索引（基于分支名） */
+	public setColourIndex(idx: number) {
+		this.colourIndex = idx;
 	}
 
 	public getEnd() {
@@ -450,6 +455,9 @@ class Graph {
 				i++;
 			}
 		}
+
+		// Post-process: assign stable colours based on branch names
+		this.assignStableColours();
 	}
 
 	public render(expandedCommit: ExpandedCommit | null) {
@@ -803,17 +811,93 @@ class Graph {
 	 * between consecutive branches, ensuring good visibility.
 	 */
 	private getStableColourIndex(commitHash: string) {
-		let seed = 0;
-		for (let i = 0; i < commitHash.length; i++) {
-			seed = ((seed << 5) - seed + commitHash.charCodeAt(i)) | 0;
-		}
-		seed = Math.abs(seed);
+		return this.hashToColourIndex(commitHash);
+	}
 
+	/**
+	 * Deterministically map a string (branch name or commit hash) to a
+	 * colour palette index. Uses a 32-bit hash + golden-ratio fractional
+	 * multiplication for even distribution across the palette.
+	 */
+	private hashToColourIndex(key: string) {
+		let seed = 0;
+		for (let i = 0; i < key.length; i++) {
+			seed = ((seed << 5) - seed + key.charCodeAt(i)) | 0;
+		}
+		// Use the fractional part of seed * golden ratio for maximum dispersion
 		let numColours = this.config.colours.length;
-		// Golden ratio angle (137.508°) for maximum colour separation
-		// Multiply seed by golden ratio, then mod by palette size
-		let goldenRatio = 0.6180339887498949;
-		return Math.floor(seed * goldenRatio) % numColours;
+		let h = (seed * 2654435761) >>> 0; // Knuth's multiplicative hash
+		return h % numColours;
+	}
+
+	/**
+	 * Post-process: assign stable colours to branches based on branch names.
+	 *
+	 * After all branches are laid out, we scan vertices for branch head
+	 * labels (commit.heads). Each branch gets coloured by its primary
+	 * branch name, so the same logical branch keeps the same colour
+	 * even when split into multiple Branch segments by merges.
+	 *
+	 * Branches with no head label fall back to their initial hash-based colour.
+	 * A global branchName → colourIndex map ensures the same name always
+	 * maps to the same colour.
+	 */
+	private assignStableColours() {
+		let numColours = this.config.colours.length;
+
+		// Map branch name → colour index (global, shared across all segments)
+		let branchNameColours: { [name: string]: number } = {};
+		// Track which colour indices are already claimed by branch names
+		let usedColours = new Set<number>();
+
+		// First pass: find all branch names and assign them colours
+		for (let i = 0; i < this.vertices.length; i++) {
+			let v = this.vertices[i];
+			let commit = this.commits[i];
+			if (v.getBranch() === null) continue;
+			if (commit.heads && commit.heads.length > 0) {
+				for (let head of commit.heads) {
+					if (!(head in branchNameColours)) {
+						let idx = this.hashToColourIndex(head);
+						// Try to avoid collisions: if this colour is taken, walk forward
+						while (usedColours.has(idx) && usedColours.size < numColours) {
+							idx = (idx + 1) % numColours;
+						}
+						branchNameColours[head] = idx;
+						usedColours.add(idx);
+					}
+				}
+			}
+		}
+
+		// Second pass: assign colours to branches
+		// For each branch, find the most relevant head label on its vertices
+		for (let branch of this.branches) {
+			let bestHead: string | null = null;
+
+			// Scan vertices to find a head label for this branch
+			for (let i = 0; i < this.vertices.length; i++) {
+				let v = this.vertices[i];
+				if (v.getBranch() === branch) {
+					let commit = this.commits[i];
+					if (commit.heads && commit.heads.length > 0) {
+						// Prefer HEAD branch (commitHead matches) or first head
+						if (commit.hash === this.commitHead) {
+							bestHead = commit.heads[0];
+							break; // HEAD branch is the best match
+						}
+						if (bestHead === null) {
+							bestHead = commit.heads[0];
+						}
+					}
+				}
+			}
+
+			if (bestHead !== null && bestHead in branchNameColours) {
+				branch.setColourIndex(branchNameColours[bestHead]);
+			}
+			// else: keep the initial hash-based colourIndex
+		}
 	}
 
 
