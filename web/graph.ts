@@ -37,12 +37,15 @@ type VertexOrNull = Vertex | null;
 
 class Branch {
 	private readonly colour: number;
+	/** 稳定颜色索引，基于分支起始 commit hash 确定性计算 */
+	private readonly colourIndex: number;
 	private end: number = 0;
 	private lines: Line[] = [];
 	private numUncommitted: number = 0;
 
-	constructor(colour: number) {
+	constructor(colour: number, colourIndex: number) {
 		this.colour = colour;
+		this.colourIndex = colourIndex;
 	}
 
 	public addLine(p1: Point, p2: Point, isCommitted: boolean, lockedFirst: boolean) {
@@ -61,6 +64,11 @@ class Branch {
 		return this.colour;
 	}
 
+	/** 获取用于渲染的稳定颜色索引 */
+	public getColourIndex() {
+		return this.colourIndex;
+	}
+
 	public getEnd() {
 		return this.end;
 	}
@@ -73,7 +81,7 @@ class Branch {
 	/* Rendering */
 
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
-		let colour = config.colours[this.colour % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
+		let colour = config.colours[this.colourIndex % config.colours.length], i, x1, y1, x2, y2, lines: PlacedLine[] = [], curPath = '', d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8), line, nextLine;
 
 		// Convert branch lines into pixel coordinates, respecting expanded commit extensions
 		for (i = 0; i < this.lines.length; i++) {
@@ -280,6 +288,11 @@ class Vertex {
 		return this.onBranch !== null ? this.onBranch.getColour() : 0;
 	}
 
+	/** 获取稳定颜色索引用于渲染 */
+	public getColourIndex() {
+		return this.onBranch !== null ? this.onBranch.getColourIndex() : 0;
+	}
+
 	public getIsCommitted() {
 		return this.isCommitted;
 	}
@@ -298,7 +311,7 @@ class Vertex {
 	public draw(svg: SVGElement, config: GG.GraphConfig, expandOffset: boolean, overListener: (event: MouseEvent) => void, outListener: (event: MouseEvent) => void) {
 		if (this.onBranch === null) return;
 
-		const colour = this.isCommitted ? config.colours[this.onBranch.getColour() % config.colours.length] : '#808080';
+		const colour = this.isCommitted ? config.colours[this.onBranch.getColourIndex() % config.colours.length] : '#808080';
 		const cx = (this.x * config.grid.x + config.grid.offsetX).toString();
 		const cy = (this.id * config.grid.y + config.grid.offsetY + (expandOffset ? config.grid.expandY : 0)).toString();
 
@@ -480,7 +493,7 @@ class Graph {
 	public getVertexColours() {
 		let colours = [], i;
 		for (i = 0; i < this.vertices.length; i++) {
-			colours[i] = this.vertices[i].getColour() % this.config.colours.length;
+			colours[i] = this.vertices[i].getColourIndex() % this.config.colours.length;
 		}
 		return colours;
 	}
@@ -729,7 +742,9 @@ class Graph {
 			}
 		} else {
 			// Branch is normal
-			let branch = new Branch(this.getAvailableColour(startAt, this.commits[startAt].hash));
+			let lane = this.getAvailableColour(startAt);
+			let colourIndex = this.getStableColourIndex(this.commits[startAt].hash);
+			let branch = new Branch(lane, colourIndex);
 			vertex.addToBranch(branch, lastPoint.x);
 			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
 			for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -763,67 +778,42 @@ class Graph {
 	}
 
 	/**
-	 * Assign a stable colour to a new branch.
-	 *
-	 * The colour is deterministically derived from the branch's originating
-	 * commit hash so that the same branch always receives the same colour
-	 * across refreshes and "load more commits" operations.
-	 *
-	 * Strategy:
-	 * 1. Compute a deterministic seed from the commit hash.
-	 * 2. Among all colour slots whose previous branch has already ended
-	 *    (i.e. recyclable slots), pick the one closest to (seed % numColours).
-	 * 3. If no recyclable slot exists, allocate a new one.
+	 * Allocate a lane slot for a new branch (determines x-position in graph).
+	 * This uses the original greedy recycling strategy — the first lane
+	 * whose previous branch has ended becomes available again.
 	 */
-	private getAvailableColour(startAt: number, commitHash: string) {
-		// Collect all recyclable slots (previous branch on this slot has ended)
-		let recyclable: number[] = [];
+	private getAvailableColour(startAt: number) {
 		for (let i = 0; i < this.availableColours.length; i++) {
 			if (startAt > this.availableColours[i]) {
-				recyclable.push(i);
+				return i;
 			}
 		}
+		this.availableColours.push(0);
+		return this.availableColours.length - 1;
+	}
 
-		if (recyclable.length === 0) {
-			// No recyclable slot, allocate a new one
-			this.availableColours.push(0);
-			return this.availableColours.length - 1;
-		}
-
-		if (recyclable.length === 1) {
-			return recyclable[0];
-		}
-
-		// Deterministic seed from commit hash
+	/**
+	 * Compute a stable colour index from a commit hash.
+	 *
+	 * The same branch (identified by its originating commit) always
+	 * receives the same colour, regardless of lane position or which
+	 * other branches are currently visible.
+	 *
+	 * Uses the golden-ratio angle to maximise perceptual separation
+	 * between consecutive branches, ensuring good visibility.
+	 */
+	private getStableColourIndex(commitHash: string) {
 		let seed = 0;
 		for (let i = 0; i < commitHash.length; i++) {
 			seed = ((seed << 5) - seed + commitHash.charCodeAt(i)) | 0;
 		}
 		seed = Math.abs(seed);
 
-		// Try to find the slot that matches (seed % numConfigColours)
-		// This maps to a stable colour from the palette
 		let numColours = this.config.colours.length;
-		let targetColour = seed % numColours;
-
-		// Prefer a recyclable slot whose colour index == targetColour
-		for (let slot of recyclable) {
-			if (slot % numColours === targetColour) {
-				return slot;
-			}
-		}
-
-		// Fall back: pick the recyclable slot closest to targetColour
-		let best = recyclable[0];
-		let bestDiff = Math.abs((best % numColours) - targetColour);
-		for (let slot of recyclable) {
-			let diff = Math.abs((slot % numColours) - targetColour);
-			if (diff < bestDiff) {
-				best = slot;
-				bestDiff = diff;
-			}
-		}
-		return best;
+		// Golden ratio angle (137.508°) for maximum colour separation
+		// Multiply seed by golden ratio, then mod by palette size
+		let goldenRatio = 0.6180339887498949;
+		return Math.floor(seed * goldenRatio) % numColours;
 	}
 
 
@@ -901,7 +891,7 @@ class Graph {
 			html += '<div class="graphTooltipSection">Stashes: ' + getLimitedRefs(htmlRefs) + '</div>';
 		}
 
-		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColour() % this.config.colours.length) + ')';
+		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColourIndex() % this.config.colours.length) + ')';
 		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');
 		const pixel: Pixel = {
 			x: point.x * this.config.grid.x + this.config.grid.offsetX,
