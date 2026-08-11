@@ -251,6 +251,13 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.language` Extension Setting.
+	 */
+	get language() {
+		return this.config.get<string>('language', 'auto');
+	}
+
+	/**
 	 * Get the value of the `git-graph.enhancedAccessibility` Extension Setting.
 	 */
 	get enhancedAccessibility() {

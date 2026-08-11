@@ -732,6 +732,21 @@
 					"default": true,
 					"description": "“包含未跟踪文件”复选框的默认状态。"
 				},
+				"git-graph.language": {
+					"type": "string",
+					"enum": [
+						"auto",
+						"zh",
+						"en"
+					],
+					"enumDescriptions": [
+						"自动跟随 VS Code 界面语言 / Follow VS Code display language",
+						"中文",
+						"English"
+					],
+					"default": "auto",
+					"description": "Git Graph 界面的显示语言。选择 \"auto\" 将跟随 VS Code 的界面语言。"
+				},
 				"git-graph.enhancedAccessibility": {
 					"type": "boolean",
 					"default": false,

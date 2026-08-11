@@ -5234,6 +5234,8 @@ window.addEventListener('load', () => {
 	if (loaded) return;
 	loaded = true;
 
+	initI18n(initialState.config.language, vscodeLanguage);
+
 	TextFormatter.registerCustomEmojiMappings(initialState.config.customEmojiShortcodeMappings);
 
 	const viewElem = document.getElementById('view');

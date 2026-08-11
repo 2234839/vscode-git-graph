@@ -19,6 +19,9 @@ declare global {
 	const globalState: GG.DeepReadonly<GG.GitGraphViewGlobalState>;
 	const workspaceState: GG.DeepReadonly<GG.GitGraphViewWorkspaceState>;
 
+	/** VS Code's display language (e.g. "en", "zh-cn", "zh-tw") */
+	const vscodeLanguage: string;
+
 	type AvatarImageCollection = { [email: string]: string };
 
 	interface ExpandedCommit {

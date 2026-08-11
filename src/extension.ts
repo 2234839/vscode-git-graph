@@ -5,6 +5,7 @@ import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
+import { initI18nBackend } from './i18n';
 import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
@@ -26,6 +27,8 @@ import { EventEmitter } from './utils/event';
 export async function activate(context: vscode.ExtensionContext) {
 	const logger = new Logger();
 	logger.log('Starting Git Graph ...');
+
+	initI18nBackend();
 
 	const gitExecutableEmitter = new EventEmitter<GitExecutable>();
 	const onDidChangeGitExecutable = gitExecutableEmitter.subscribe;
@@ -76,6 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, diffDocProvider),
 		vscode.workspace.onDidChangeConfiguration((event) => {
 			if (event.affectsConfiguration('git-graph')) {
+				initI18nBackend();
 				configurationEmitter.emit(event);
 			} else if (event.affectsConfiguration('git.path')) {
 				const paths = getConfig().gitPaths;

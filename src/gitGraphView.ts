@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AvatarManager } from './avatarManager';
 import { getConfig } from './config';
+import { t } from './i18n';
 import { DataSource, GitCommitDetailsData, GitConfigKey } from './dataSource';
 import { ExtensionState } from './extensionState';
 import { Logger } from './logger';
@@ -965,6 +966,7 @@ export class GitGraphView extends Disposable {
   			stickyHeader: config.stickyHeader,
   			dialogDefaults: config.dialogDefaults,
   			enhancedAccessibility: config.enhancedAccessibility,
+  			language: config.language,
   			fetchAndPrune: config.fetchAndPrune,
   			fetchAndPruneTags: config.fetchAndPruneTags,
   			fetchAvatars: config.fetchAvatars && this.extensionState.isAvatarStorageAvailable(),
@@ -1008,7 +1010,7 @@ export class GitGraphView extends Disposable {
 
   	if (this.dataSource.isGitExecutableUnknown()) {
   		body = `<body class="unableToLoad">
-			<h2>无法加载 Git Graph</h2>
+			<h2>${t('无法加载 Git Graph')}</h2>
 			<p class="unableToLoadMessage">${UNABLE_TO_FIND_GIT_MSG}</p>
 			</body>`;
   	} else if (numRepos > 0) {
@@ -1035,15 +1037,15 @@ export class GitGraphView extends Disposable {
 				</div>
 				<div id="footer"></div>
 			</div>
-			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)}, globalState = ${JSON.stringify(globalState)}, workspaceState = ${JSON.stringify(workspaceState)};</script>
+			<script nonce="${nonce}">var initialState = ${JSON.stringify(initialState)}, globalState = ${JSON.stringify(globalState)}, workspaceState = ${JSON.stringify(workspaceState)}, vscodeLanguage = ${JSON.stringify(vscode.env.language)};</script>
 			<script nonce="${nonce}" src="${this.getMediaUri('out.min.js')}"></script>
 			</body>`;
   	} else {
   		body = `<body class="unableToLoad">
-			<h2>无法加载 Git Graph</h2>
-			<p class="unableToLoadMessage">Git Graph 上次扫描时未在当前工作区中找到 Git 仓库。</p>
-			<p>如果您的仓库位于打开的工作区文件夹的子文件夹中，请确保已正确设置 Git Graph 设置 "git-graph.maxDepthOfRepoSearch"（阅读<a href="https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">文档</a>了解更多信息）。</p>
-			<p><div id="rescanForReposBtn" class="roundedBtn">重新扫描当前工作区以查找仓库</div></p>
+			<h2>${t('无法加载 Git Graph')}</h2>
+			<p class="unableToLoadMessage">${t('Git Graph 上次扫描时未在当前工作区中找到 Git 仓库。')}</p>
+			<p>${t('如果您的仓库位于打开的工作区文件夹的子文件夹中，请确保已正确设置 Git Graph 设置 "git-graph.maxDepthOfRepoSearch"（阅读')}<a href="https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">${t('文档')}</a>${t('了解更多信息）。')}</p>
+			<p><div id="rescanForReposBtn" class="roundedBtn">${t('重新扫描当前工作区以查找仓库')}</div></p>
 			<script nonce="${nonce}">(function(){ var api = acquireVsCodeApi(); document.getElementById('rescanForReposBtn').addEventListener('click', function(){ api.postMessage({command: 'rescanForRepos'}); }); })();</script>
 			</body>`;
   	}
