@@ -11,13 +11,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {
-  LifeCycleStage,
-  LifeCycleState,
-  generateNonce,
-  getDataDirectory,
-  getLifeCycleStateInDirectory,
-  saveLifeCycleStateInDirectory,
-  sendQueue,
+	LifeCycleStage,
+	LifeCycleState,
+	generateNonce,
+	getDataDirectory,
+	getLifeCycleStateInDirectory,
+	saveLifeCycleStateInDirectory,
+	sendQueue
 } from './utils';
 import { getExtensionVersion } from '../utils';
 
@@ -26,68 +26,68 @@ import { getExtensionVersion } from '../utils';
  * @param extensionContext The extension context of Git Graph.
  */
 export async function onStartUp(extensionContext: vscode.ExtensionContext) {
-  if (vscode.env.sessionId === 'someValue.sessionId') {
-    // Extension is running in the Extension Development Host, don't proceed.
-    return;
-  }
+	if (vscode.env.sessionId === 'someValue.sessionId') {
+		// Extension is running in the Extension Development Host, don't proceed.
+		return;
+	}
 
-  let state = await getLifeCycleStateInDirectory(extensionContext.globalStoragePath);
+	let state = await getLifeCycleStateInDirectory(extensionContext.globalStoragePath);
 
-  if (state !== null && !state.apiAvailable) {
-    // The API is no longer available, don't proceed.
-    return;
-  }
+	if (state !== null && !state.apiAvailable) {
+		// The API is no longer available, don't proceed.
+		return;
+	}
 
-  const versions = {
-    extension: await getExtensionVersion(extensionContext),
-    vscode: vscode.version,
-  };
+	const versions = {
+		extension: await getExtensionVersion(extensionContext),
+		vscode: vscode.version
+	};
 
-  if (state === null || state.current.extension !== versions.extension) {
-    // This is the first startup after installing Git Graph, or Git Graph has been updated since the last startup.
-    const nonce = await getNonce();
+	if (state === null || state.current.extension !== versions.extension) {
+		// This is the first startup after installing Git Graph, or Git Graph has been updated since the last startup.
+		const nonce = await getNonce();
 
-    if (state === null) {
-      // Install
-      state = {
-        previous: null,
-        current: versions,
-        apiAvailable: true,
-        queue: [
-          {
-            stage: LifeCycleStage.Install,
-            extension: versions.extension,
-            vscode: versions.vscode,
-            nonce: nonce,
-          },
-        ],
-        attempts: 1,
-      };
-    } else {
-      // Update
-      state.previous = state.current;
-      state.current = versions;
-      state.queue.push({
-        stage: LifeCycleStage.Update,
-        from: state.previous,
-        to: state.current,
-        nonce: nonce,
-      });
-      state.attempts = 1;
-    }
+		if (state === null) {
+			// Install
+			state = {
+				previous: null,
+				current: versions,
+				apiAvailable: true,
+				queue: [
+					{
+						stage: LifeCycleStage.Install,
+						extension: versions.extension,
+						vscode: versions.vscode,
+						nonce: nonce
+					}
+				],
+				attempts: 1
+			};
+		} else {
+			// Update
+			state.previous = state.current;
+			state.current = versions;
+			state.queue.push({
+				stage: LifeCycleStage.Update,
+				from: state.previous,
+				to: state.current,
+				nonce: nonce
+			});
+			state.attempts = 1;
+		}
 
-    await saveLifeCycleState(extensionContext, state);
-    state.apiAvailable = await sendQueue(state.queue);
-    state.queue = [];
-    await saveLifeCycleState(extensionContext, state);
-  } else if (state.queue.length > 0 && state.attempts < 2) {
-    // There are one or more events in the queue that previously failed to send, send them
-    state.attempts++;
-    await saveLifeCycleState(extensionContext, state);
-    state.apiAvailable = await sendQueue(state.queue);
-    state.queue = [];
-    await saveLifeCycleState(extensionContext, state);
-  }
+		await saveLifeCycleState(extensionContext, state);
+		state.apiAvailable = await sendQueue(state.queue);
+		state.queue = [];
+		await saveLifeCycleState(extensionContext, state);
+	} else if (state.queue.length > 0 && state.attempts < 2) {
+		// There are one or more events in the queue that previously failed to send, send them
+		state.attempts++;
+		await saveLifeCycleState(extensionContext, state);
+		state.apiAvailable = await sendQueue(state.queue);
+		state.queue = [];
+		await saveLifeCycleState(extensionContext, state);
+	}
 }
 
 /**
@@ -97,10 +97,10 @@ export async function onStartUp(extensionContext: vscode.ExtensionContext) {
  * @param state The state to save.
  */
 function saveLifeCycleState(extensionContext: vscode.ExtensionContext, state: LifeCycleState) {
-  return Promise.all([
-    saveLifeCycleStateInDirectory(extensionContext.globalStoragePath, state),
-    saveLifeCycleStateInDirectory(getDataDirectory(), state),
-  ]);
+	return Promise.all([
+		saveLifeCycleStateInDirectory(extensionContext.globalStoragePath, state),
+		saveLifeCycleStateInDirectory(getDataDirectory(), state)
+	]);
 }
 
 /**
@@ -108,43 +108,43 @@ function saveLifeCycleState(extensionContext: vscode.ExtensionContext, state: Li
  * @returns A 256 bit cryptographically strong pseudo-random nonce.
  */
 function getNonce() {
-  return new Promise<string>((resolve, reject) => {
-    const dir = getDataDirectory();
-    const file = path.join(dir, 'lock.json');
-    fs.mkdir(dir, (err) => {
-      if (err) {
-        if (err.code === 'EEXIST') {
-          // The directory already exists, attempt to read the previously created data
-          fs.readFile(file, (err, data) => {
-            if (err) {
-              // Unable to read the file, reject
-              reject();
-            } else {
-              try {
-                // Resolve to the previously generated nonce
-                resolve(JSON.parse(data.toString()).nonce);
-              } catch (_) {
-                reject();
-              }
-            }
-          });
-        } else {
-          // An unexpected error occurred, reject
-          reject();
-        }
-      } else {
-        // The directory was created, generate a nonce
-        const nonce = generateNonce();
-        fs.writeFile(file, JSON.stringify({ nonce: nonce }), (err) => {
-          if (err) {
-            // Unable to save data
-            reject();
-          } else {
-            // Nonce successfully saved, resolve to it
-            resolve(nonce);
-          }
-        });
-      }
-    });
-  });
+	return new Promise<string>((resolve, reject) => {
+		const dir = getDataDirectory();
+		const file = path.join(dir, 'lock.json');
+		fs.mkdir(dir, (err) => {
+			if (err) {
+				if (err.code === 'EEXIST') {
+					// The directory already exists, attempt to read the previously created data
+					fs.readFile(file, (err, data) => {
+						if (err) {
+							// Unable to read the file, reject
+							reject();
+						} else {
+							try {
+								// Resolve to the previously generated nonce
+								resolve(JSON.parse(data.toString()).nonce);
+							} catch (_) {
+								reject();
+							}
+						}
+					});
+				} else {
+					// An unexpected error occurred, reject
+					reject();
+				}
+			} else {
+				// The directory was created, generate a nonce
+				const nonce = generateNonce();
+				fs.writeFile(file, JSON.stringify({ nonce: nonce }), (err) => {
+					if (err) {
+						// Unable to save data
+						reject();
+					} else {
+						// Nonce successfully saved, resolve to it
+						resolve(nonce);
+					}
+				});
+			}
+		});
+	});
 }

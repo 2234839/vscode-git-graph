@@ -729,7 +729,7 @@ class Graph {
 			}
 		} else {
 			// Branch is normal
-			let branch = new Branch(this.getAvailableColour(startAt));
+			let branch = new Branch(this.getAvailableColour(startAt, this.commits[startAt].hash));
 			vertex.addToBranch(branch, lastPoint.x);
 			vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
 			for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -762,14 +762,68 @@ class Graph {
 		}
 	}
 
-	private getAvailableColour(startAt: number) {
+	/**
+	 * Assign a stable colour to a new branch.
+	 *
+	 * The colour is deterministically derived from the branch's originating
+	 * commit hash so that the same branch always receives the same colour
+	 * across refreshes and "load more commits" operations.
+	 *
+	 * Strategy:
+	 * 1. Compute a deterministic seed from the commit hash.
+	 * 2. Among all colour slots whose previous branch has already ended
+	 *    (i.e. recyclable slots), pick the one closest to (seed % numColours).
+	 * 3. If no recyclable slot exists, allocate a new one.
+	 */
+	private getAvailableColour(startAt: number, commitHash: string) {
+		// Collect all recyclable slots (previous branch on this slot has ended)
+		let recyclable: number[] = [];
 		for (let i = 0; i < this.availableColours.length; i++) {
 			if (startAt > this.availableColours[i]) {
-				return i;
+				recyclable.push(i);
 			}
 		}
-		this.availableColours.push(0);
-		return this.availableColours.length - 1;
+
+		if (recyclable.length === 0) {
+			// No recyclable slot, allocate a new one
+			this.availableColours.push(0);
+			return this.availableColours.length - 1;
+		}
+
+		if (recyclable.length === 1) {
+			return recyclable[0];
+		}
+
+		// Deterministic seed from commit hash
+		let seed = 0;
+		for (let i = 0; i < commitHash.length; i++) {
+			seed = ((seed << 5) - seed + commitHash.charCodeAt(i)) | 0;
+		}
+		seed = Math.abs(seed);
+
+		// Try to find the slot that matches (seed % numConfigColours)
+		// This maps to a stable colour from the palette
+		let numColours = this.config.colours.length;
+		let targetColour = seed % numColours;
+
+		// Prefer a recyclable slot whose colour index == targetColour
+		for (let slot of recyclable) {
+			if (slot % numColours === targetColour) {
+				return slot;
+			}
+		}
+
+		// Fall back: pick the recyclable slot closest to targetColour
+		let best = recyclable[0];
+		let bestDiff = Math.abs((best % numColours) - targetColour);
+		for (let slot of recyclable) {
+			let diff = Math.abs((slot % numColours) - targetColour);
+			if (diff < bestDiff) {
+				best = slot;
+				bestDiff = diff;
+			}
+		}
+		return best;
 	}
 
 

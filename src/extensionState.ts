@@ -3,15 +3,15 @@ import * as vscode from 'vscode';
 import { Avatar, AvatarCache } from './avatarManager';
 import { getConfig } from './config';
 import {
-  BooleanOverride,
-  CodeReview,
-  ErrorInfo,
-  FileViewType,
-  GitGraphViewGlobalState,
-  GitGraphViewWorkspaceState,
-  GitRepoSet,
-  GitRepoState,
-  RepoCommitOrdering,
+	BooleanOverride,
+	CodeReview,
+	ErrorInfo,
+	FileViewType,
+	GitGraphViewGlobalState,
+	GitGraphViewWorkspaceState,
+	GitRepoSet,
+	GitRepoState,
+	RepoCommitOrdering
 } from './types';
 import { GitExecutable, getPathFromStr } from './utils';
 import { Disposable } from './utils/disposable';
@@ -28,37 +28,37 @@ const REPO_STATES = 'repoStates';
 const WORKSPACE_VIEW_STATE = 'workspaceViewState';
 
 export const DEFAULT_REPO_STATE: GitRepoState = {
-  cdvDivider: 0.5,
-  cdvHeight: 250,
-  columnWidths: null,
-  commitOrdering: RepoCommitOrdering.Default,
-  fileViewType: FileViewType.Default,
-  hideRemotes: [],
-  includeCommitsMentionedByReflogs: BooleanOverride.Default,
-  issueLinkingConfig: null,
-  lastImportAt: 0,
-  name: null,
-  onlyFollowFirstParent: BooleanOverride.Default,
-  onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
-  onRepoLoadShowSpecificBranches: null,
-  pullRequestConfig: null,
-  showRemoteBranches: true,
-  showRemoteBranchesV2: BooleanOverride.Default,
-  showStashes: BooleanOverride.Default,
-  showTags: BooleanOverride.Default,
-  workspaceFolderIndex: null,
+	cdvDivider: 0.5,
+	cdvHeight: 250,
+	columnWidths: null,
+	commitOrdering: RepoCommitOrdering.Default,
+	fileViewType: FileViewType.Default,
+	hideRemotes: [],
+	includeCommitsMentionedByReflogs: BooleanOverride.Default,
+	issueLinkingConfig: null,
+	lastImportAt: 0,
+	name: null,
+	onlyFollowFirstParent: BooleanOverride.Default,
+	onRepoLoadShowCheckedOutBranch: BooleanOverride.Default,
+	onRepoLoadShowSpecificBranches: null,
+	pullRequestConfig: null,
+	showRemoteBranches: true,
+	showRemoteBranchesV2: BooleanOverride.Default,
+	showStashes: BooleanOverride.Default,
+	showTags: BooleanOverride.Default,
+	workspaceFolderIndex: null
 };
 
 const DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE: GitGraphViewGlobalState = {
-  alwaysAcceptCheckoutCommit: false,
-  issueLinkingConfig: null,
-  pushTagSkipRemoteCheck: false,
+	alwaysAcceptCheckoutCommit: false,
+	issueLinkingConfig: null,
+	pushTagSkipRemoteCheck: false
 };
 
 const DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE: GitGraphViewWorkspaceState = {
-  findIsCaseSensitive: false,
-  findIsRegex: false,
-  findOpenCommitDetailsView: false,
+	findIsCaseSensitive: false,
+	findIsRegex: false,
+	findOpenCommitDetailsView: false
 };
 
 export interface CodeReviewData {
@@ -83,36 +83,36 @@ export class ExtensionState extends Disposable {
    * @param onDidChangeGitExecutable The Event emitting the Git executable for Git Graph to use.
    */
   constructor(
-    context: vscode.ExtensionContext,
-    onDidChangeGitExecutable: GgEvent<GitExecutable | null>,
+  	context: vscode.ExtensionContext,
+  	onDidChangeGitExecutable: GgEvent<GitExecutable | null>
   ) {
-    super();
-    this.globalState = context.globalState;
-    this.workspaceState = context.workspaceState;
+  	super();
+  	this.globalState = context.globalState;
+  	this.workspaceState = context.workspaceState;
 
-    this.globalStoragePath = getPathFromStr(context.globalStoragePath);
-    fs.stat(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
-      if (!err) {
-        this.avatarStorageAvailable = true;
-      } else {
-        fs.mkdir(this.globalStoragePath, () => {
-          fs.mkdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
-            if (!err || err.code === 'EEXIST') {
-              // The directory was created, or it already exists
-              this.avatarStorageAvailable = true;
-            }
-          });
-        });
-      }
-    });
+  	this.globalStoragePath = getPathFromStr(context.globalStoragePath);
+  	fs.stat(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
+  		if (!err) {
+  			this.avatarStorageAvailable = true;
+  		} else {
+  			fs.mkdir(this.globalStoragePath, () => {
+  				fs.mkdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err) => {
+  					if (!err || err.code === 'EEXIST') {
+  						// The directory was created, or it already exists
+  						this.avatarStorageAvailable = true;
+  					}
+  				});
+  			});
+  		}
+  	});
 
-    this.registerDisposable(
-      onDidChangeGitExecutable((gitExecutable) => {
-        if (gitExecutable) {
-          this.setLastKnownGitPath(gitExecutable.path);
-        }
-      }),
-    );
+  	this.registerDisposable(
+  		onDidChangeGitExecutable((gitExecutable) => {
+  			if (gitExecutable) {
+  				this.setLastKnownGitPath(gitExecutable.path);
+  			}
+  		})
+  	);
   }
 
   /* Known Repositories */
@@ -122,25 +122,25 @@ export class ExtensionState extends Disposable {
    * @returns The set of repositories.
    */
   public getRepos() {
-    const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
-    const outputSet: GitRepoSet = {};
-    let showRemoteBranchesDefaultValue: boolean | null = null;
-    Object.keys(repoSet).forEach((repo) => {
-      outputSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
-      if (
-        typeof repoSet[repo].showRemoteBranchesV2 === 'undefined' &&
+  	const repoSet = this.workspaceState.get<GitRepoSet>(REPO_STATES, {});
+  	const outputSet: GitRepoSet = {};
+  	let showRemoteBranchesDefaultValue: boolean | null = null;
+  	Object.keys(repoSet).forEach((repo) => {
+  		outputSet[repo] = Object.assign({}, DEFAULT_REPO_STATE, repoSet[repo]);
+  		if (
+  			typeof repoSet[repo].showRemoteBranchesV2 === 'undefined' &&
         typeof repoSet[repo].showRemoteBranches !== 'undefined'
-      ) {
-        if (showRemoteBranchesDefaultValue === null) {
-          showRemoteBranchesDefaultValue = getConfig().showRemoteBranches;
-        }
-        if (repoSet[repo].showRemoteBranches !== showRemoteBranchesDefaultValue) {
-          outputSet[repo].showRemoteBranchesV2 =
+  		) {
+  			if (showRemoteBranchesDefaultValue === null) {
+  				showRemoteBranchesDefaultValue = getConfig().showRemoteBranches;
+  			}
+  			if (repoSet[repo].showRemoteBranches !== showRemoteBranchesDefaultValue) {
+  				outputSet[repo].showRemoteBranchesV2 =
             repoSet[repo].showRemoteBranches ? BooleanOverride.Enabled : BooleanOverride.Disabled;
-        }
-      }
-    });
-    return outputSet;
+  			}
+  		}
+  	});
+  	return outputSet;
   }
 
   /**
@@ -148,7 +148,7 @@ export class ExtensionState extends Disposable {
    * @param gitRepoSet The set of repositories.
    */
   public saveRepos(gitRepoSet: GitRepoSet) {
-    this.updateWorkspaceState(REPO_STATES, gitRepoSet);
+  	this.updateWorkspaceState(REPO_STATES, gitRepoSet);
   }
 
   /**
@@ -157,16 +157,16 @@ export class ExtensionState extends Disposable {
    * @param newRepo The repository to transfer state to.
    */
   public transferRepo(oldRepo: string, newRepo: string) {
-    if (this.getLastActiveRepo() === oldRepo) {
-      this.setLastActiveRepo(newRepo);
-    }
+  	if (this.getLastActiveRepo() === oldRepo) {
+  		this.setLastActiveRepo(newRepo);
+  	}
 
-    let reviews = this.getCodeReviews();
-    if (typeof reviews[oldRepo] !== 'undefined') {
-      reviews[newRepo] = reviews[oldRepo];
-      delete reviews[oldRepo];
-      this.setCodeReviews(reviews);
-    }
+  	let reviews = this.getCodeReviews();
+  	if (typeof reviews[oldRepo] !== 'undefined') {
+  		reviews[newRepo] = reviews[oldRepo];
+  		delete reviews[oldRepo];
+  		this.setCodeReviews(reviews);
+  	}
   }
 
   /* Global View State */
@@ -176,11 +176,11 @@ export class ExtensionState extends Disposable {
    * @returns The global state.
    */
   public getGlobalViewState() {
-    const globalViewState = this.globalState.get<GitGraphViewGlobalState>(
-      GLOBAL_VIEW_STATE,
-      DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE,
-    );
-    return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE, globalViewState);
+  	const globalViewState = this.globalState.get<GitGraphViewGlobalState>(
+  		GLOBAL_VIEW_STATE,
+  		DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE
+  	);
+  	return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_GLOBAL_STATE, globalViewState);
   }
 
   /**
@@ -188,7 +188,7 @@ export class ExtensionState extends Disposable {
    * @param state The global state.
    */
   public setGlobalViewState(state: GitGraphViewGlobalState) {
-    return this.updateGlobalState(GLOBAL_VIEW_STATE, state);
+  	return this.updateGlobalState(GLOBAL_VIEW_STATE, state);
   }
 
   /* Workspace View State */
@@ -198,11 +198,11 @@ export class ExtensionState extends Disposable {
    * @returns The workspace state.
    */
   public getWorkspaceViewState() {
-    const workspaceViewState = this.workspaceState.get<GitGraphViewWorkspaceState>(
-      WORKSPACE_VIEW_STATE,
-      DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE,
-    );
-    return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE, workspaceViewState);
+  	const workspaceViewState = this.workspaceState.get<GitGraphViewWorkspaceState>(
+  		WORKSPACE_VIEW_STATE,
+  		DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE
+  	);
+  	return Object.assign({}, DEFAULT_GIT_GRAPH_VIEW_WORKSPACE_STATE, workspaceViewState);
   }
 
   /**
@@ -210,7 +210,7 @@ export class ExtensionState extends Disposable {
    * @param state The workspace state.
    */
   public setWorkspaceViewState(state: GitGraphViewWorkspaceState) {
-    return this.updateWorkspaceState(WORKSPACE_VIEW_STATE, state);
+  	return this.updateWorkspaceState(WORKSPACE_VIEW_STATE, state);
   }
 
   /* Ignored Repos */
@@ -220,7 +220,7 @@ export class ExtensionState extends Disposable {
    * @returns An array of the paths of ignored repositories.
    */
   public getIgnoredRepos() {
-    return this.workspaceState.get<string[]>(IGNORED_REPOS, []);
+  	return this.workspaceState.get<string[]>(IGNORED_REPOS, []);
   }
 
   /**
@@ -228,7 +228,7 @@ export class ExtensionState extends Disposable {
    * @param ignoredRepos An array of the paths of ignored repositories.
    */
   public setIgnoredRepos(ignoredRepos: string[]) {
-    return this.updateWorkspaceState(IGNORED_REPOS, ignoredRepos);
+  	return this.updateWorkspaceState(IGNORED_REPOS, ignoredRepos);
   }
 
   /* Last Active Repo */
@@ -238,7 +238,7 @@ export class ExtensionState extends Disposable {
    * @returns The path of the last active repository.
    */
   public getLastActiveRepo() {
-    return this.workspaceState.get<string | null>(LAST_ACTIVE_REPO, null);
+  	return this.workspaceState.get<string | null>(LAST_ACTIVE_REPO, null);
   }
 
   /**
@@ -246,7 +246,7 @@ export class ExtensionState extends Disposable {
    * @param repo The path of the last active repository.
    */
   public setLastActiveRepo(repo: string | null) {
-    this.updateWorkspaceState(LAST_ACTIVE_REPO, repo);
+  	this.updateWorkspaceState(LAST_ACTIVE_REPO, repo);
   }
 
   /* Last Known Git Path */
@@ -256,7 +256,7 @@ export class ExtensionState extends Disposable {
    * @returns The path of the Git executable.
    */
   public getLastKnownGitPath() {
-    return this.globalState.get<string | null>(LAST_KNOWN_GIT_PATH, null);
+  	return this.globalState.get<string | null>(LAST_KNOWN_GIT_PATH, null);
   }
 
   /**
@@ -264,7 +264,7 @@ export class ExtensionState extends Disposable {
    * @param path The path of the Git executable.
    */
   private setLastKnownGitPath(path: string) {
-    this.updateGlobalState(LAST_KNOWN_GIT_PATH, path);
+  	this.updateGlobalState(LAST_KNOWN_GIT_PATH, path);
   }
 
   /* Avatars */
@@ -274,7 +274,7 @@ export class ExtensionState extends Disposable {
    * @returns TRUE => Avatar Storage Folder is available, FALSE => Avatar Storage Folder isn't available.
    */
   public isAvatarStorageAvailable() {
-    return this.avatarStorageAvailable;
+  	return this.avatarStorageAvailable;
   }
 
   /**
@@ -282,7 +282,7 @@ export class ExtensionState extends Disposable {
    * @returns The folder path.
    */
   public getAvatarStoragePath() {
-    return this.globalStoragePath + AVATAR_STORAGE_FOLDER;
+  	return this.globalStoragePath + AVATAR_STORAGE_FOLDER;
   }
 
   /**
@@ -290,7 +290,7 @@ export class ExtensionState extends Disposable {
    * @returns The avatar cache.
    */
   public getAvatarCache() {
-    return this.globalState.get<AvatarCache>(AVATAR_CACHE, {});
+  	return this.globalState.get<AvatarCache>(AVATAR_CACHE, {});
   }
 
   /**
@@ -299,9 +299,9 @@ export class ExtensionState extends Disposable {
    * @param avatar The details of the avatar.
    */
   public saveAvatar(email: string, avatar: Avatar) {
-    let avatars = this.getAvatarCache();
-    avatars[email] = avatar;
-    this.updateGlobalState(AVATAR_CACHE, avatars);
+  	let avatars = this.getAvatarCache();
+  	avatars[email] = avatar;
+  	this.updateGlobalState(AVATAR_CACHE, avatars);
   }
 
   /**
@@ -309,9 +309,9 @@ export class ExtensionState extends Disposable {
    * @param email The email address of the avatar to remove.
    */
   public removeAvatarFromCache(email: string) {
-    let avatars = this.getAvatarCache();
-    delete avatars[email];
-    this.updateGlobalState(AVATAR_CACHE, avatars);
+  	let avatars = this.getAvatarCache();
+  	delete avatars[email];
+  	this.updateGlobalState(AVATAR_CACHE, avatars);
   }
 
   /**
@@ -319,17 +319,17 @@ export class ExtensionState extends Disposable {
    * @returns A Thenable resolving to the ErrorInfo that resulted from executing this method.
    */
   public clearAvatarCache() {
-    return this.updateGlobalState(AVATAR_CACHE, {}).then((errorInfo) => {
-      if (errorInfo === null) {
-        fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
-          if (err) return;
-          for (let i = 0; i < files.length; i++) {
-            fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => {});
-          }
-        });
-      }
-      return errorInfo;
-    });
+  	return this.updateGlobalState(AVATAR_CACHE, {}).then((errorInfo) => {
+  		if (errorInfo === null) {
+  			fs.readdir(this.globalStoragePath + AVATAR_STORAGE_FOLDER, (err, files) => {
+  				if (err) return;
+  				for (let i = 0; i < files.length; i++) {
+  					fs.unlink(this.globalStoragePath + AVATAR_STORAGE_FOLDER + '/' + files[i], () => {});
+  				}
+  			});
+  		}
+  		return errorInfo;
+  	});
   }
 
   /* Code Review */
@@ -345,17 +345,17 @@ export class ExtensionState extends Disposable {
    * @returns The Code Review that was started.
    */
   public startCodeReview(repo: string, id: string, files: string[], lastViewedFile: string | null) {
-    let reviews = this.getCodeReviews();
-    if (typeof reviews[repo] === 'undefined') reviews[repo] = {};
-    reviews[repo][id] = {
-      lastActive: new Date().getTime(),
-      lastViewedFile: lastViewedFile,
-      remainingFiles: files,
-    };
-    return this.setCodeReviews(reviews).then((err) => ({
-      codeReview: <CodeReview>Object.assign({ id: id }, reviews[repo][id]),
-      error: err,
-    }));
+  	let reviews = this.getCodeReviews();
+  	if (typeof reviews[repo] === 'undefined') reviews[repo] = {};
+  	reviews[repo][id] = {
+  		lastActive: new Date().getTime(),
+  		lastViewedFile: lastViewedFile,
+  		remainingFiles: files
+  	};
+  	return this.setCodeReviews(reviews).then((err) => ({
+  		codeReview: <CodeReview>Object.assign({ id: id }, reviews[repo][id]),
+  		error: err
+  	}));
   }
 
   /**
@@ -364,9 +364,9 @@ export class ExtensionState extends Disposable {
    * @param id The ID of the Code Review.
    */
   public endCodeReview(repo: string, id: string) {
-    let reviews = this.getCodeReviews();
-    removeCodeReview(reviews, repo, id);
-    return this.setCodeReviews(reviews);
+  	let reviews = this.getCodeReviews();
+  	removeCodeReview(reviews, repo, id);
+  	return this.setCodeReviews(reviews);
   }
 
   /**
@@ -376,14 +376,14 @@ export class ExtensionState extends Disposable {
    * @returns The Code Review.
    */
   public getCodeReview(repo: string, id: string) {
-    let reviews = this.getCodeReviews();
-    if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
-      reviews[repo][id].lastActive = new Date().getTime();
-      this.setCodeReviews(reviews);
-      return <CodeReview>Object.assign({ id: id }, reviews[repo][id]);
-    } else {
-      return null;
-    }
+  	let reviews = this.getCodeReviews();
+  	if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
+  		reviews[repo][id].lastActive = new Date().getTime();
+  		this.setCodeReviews(reviews);
+  		return <CodeReview>Object.assign({ id: id }, reviews[repo][id]);
+  	} else {
+  		return null;
+  	}
   }
 
   /**
@@ -395,54 +395,54 @@ export class ExtensionState extends Disposable {
    * @returns An error message if request can't be completed.
    */
   public updateCodeReview(
-    repo: string,
-    id: string,
-    remainingFiles: string[],
-    lastViewedFile: string | null,
+  	repo: string,
+  	id: string,
+  	remainingFiles: string[],
+  	lastViewedFile: string | null
   ) {
-    const reviews = this.getCodeReviews();
+  	const reviews = this.getCodeReviews();
 
-    if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
-      return Promise.resolve('The Code Review could not be found.');
-    }
+  	if (typeof reviews[repo] === 'undefined' || typeof reviews[repo][id] === 'undefined') {
+  		return Promise.resolve('The Code Review could not be found.');
+  	}
 
-    if (remainingFiles.length > 0) {
-      reviews[repo][id].remainingFiles = remainingFiles;
-      reviews[repo][id].lastActive = new Date().getTime();
-      if (lastViewedFile !== null) {
-        reviews[repo][id].lastViewedFile = lastViewedFile;
-      }
-    } else {
-      removeCodeReview(reviews, repo, id);
-    }
+  	if (remainingFiles.length > 0) {
+  		reviews[repo][id].remainingFiles = remainingFiles;
+  		reviews[repo][id].lastActive = new Date().getTime();
+  		if (lastViewedFile !== null) {
+  			reviews[repo][id].lastViewedFile = lastViewedFile;
+  		}
+  	} else {
+  		removeCodeReview(reviews, repo, id);
+  	}
 
-    return this.setCodeReviews(reviews);
+  	return this.setCodeReviews(reviews);
   }
 
   /**
    * Delete any Code Reviews that haven't been active during the last 90 days.
    */
   public expireOldCodeReviews() {
-    let reviews = this.getCodeReviews(),
-      change = false,
-      expireReviewsBefore = new Date().getTime() - 7776000000; // 90 days x 24 hours x 60 minutes x 60 seconds x 1000 milliseconds
-    Object.keys(reviews).forEach((repo) => {
-      Object.keys(reviews[repo]).forEach((id) => {
-        if (reviews[repo][id].lastActive < expireReviewsBefore) {
-          delete reviews[repo][id];
-          change = true;
-        }
-      });
-      removeCodeReviewRepoIfEmpty(reviews, repo);
-    });
-    if (change) this.setCodeReviews(reviews);
+  	let reviews = this.getCodeReviews(),
+  		change = false,
+  		expireReviewsBefore = new Date().getTime() - 7776000000; // 90 days x 24 hours x 60 minutes x 60 seconds x 1000 milliseconds
+  	Object.keys(reviews).forEach((repo) => {
+  		Object.keys(reviews[repo]).forEach((id) => {
+  			if (reviews[repo][id].lastActive < expireReviewsBefore) {
+  				delete reviews[repo][id];
+  				change = true;
+  			}
+  		});
+  		removeCodeReviewRepoIfEmpty(reviews, repo);
+  	});
+  	if (change) this.setCodeReviews(reviews);
   }
 
   /**
    * End all Code Reviews in the current workspace.
    */
   public endAllWorkspaceCodeReviews() {
-    this.setCodeReviews({});
+  	this.setCodeReviews({});
   }
 
   /**
@@ -450,7 +450,7 @@ export class ExtensionState extends Disposable {
    * @returns The set of Code Reviews.
    */
   public getCodeReviews() {
-    return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
+  	return this.workspaceState.get<CodeReviews>(CODE_REVIEWS, {});
   }
 
   /**
@@ -458,7 +458,7 @@ export class ExtensionState extends Disposable {
    * @param reviews The set of Code Reviews.
    */
   private setCodeReviews(reviews: CodeReviews) {
-    return this.updateWorkspaceState(CODE_REVIEWS, reviews);
+  	return this.updateWorkspaceState(CODE_REVIEWS, reviews);
   }
 
   /* Update State Memento's */
@@ -470,10 +470,10 @@ export class ExtensionState extends Disposable {
    * @returns A Thenable resolving to the ErrorInfo that resulted from updating the Global State.
    */
   private updateGlobalState(key: string, value: any): Thenable<ErrorInfo> {
-    return this.globalState.update(key, value).then(
-      () => null,
-      () => 'Visual Studio Code was unable to save the Git Graph Global State Memento.',
-    );
+  	return this.globalState.update(key, value).then(
+  		() => null,
+  		() => 'Visual Studio Code was unable to save the Git Graph Global State Memento.'
+  	);
   }
 
   /**
@@ -483,10 +483,10 @@ export class ExtensionState extends Disposable {
    * @returns A Thenable resolving to the ErrorInfo that resulted from updating the Workspace State.
    */
   private updateWorkspaceState(key: string, value: any): Thenable<ErrorInfo> {
-    return this.workspaceState.update(key, value).then(
-      () => null,
-      () => 'Visual Studio Code was unable to save the Git Graph Workspace State Memento.',
-    );
+  	return this.workspaceState.update(key, value).then(
+  		() => null,
+  		() => 'Visual Studio Code was unable to save the Git Graph Workspace State Memento.'
+  	);
   }
 }
 
@@ -499,10 +499,10 @@ export class ExtensionState extends Disposable {
  * @param id The ID of the Code Review.
  */
 function removeCodeReview(reviews: CodeReviews, repo: string, id: string) {
-  if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
-    delete reviews[repo][id];
-    removeCodeReviewRepoIfEmpty(reviews, repo);
-  }
+	if (typeof reviews[repo] !== 'undefined' && typeof reviews[repo][id] !== 'undefined') {
+		delete reviews[repo][id];
+		removeCodeReviewRepoIfEmpty(reviews, repo);
+	}
 }
 
 /**
@@ -511,7 +511,7 @@ function removeCodeReview(reviews: CodeReviews, repo: string, id: string) {
  * @param repo The repository to perform this action on.
  */
 function removeCodeReviewRepoIfEmpty(reviews: CodeReviews, repo: string) {
-  if (typeof reviews[repo] !== 'undefined' && Object.keys(reviews[repo]).length === 0) {
-    delete reviews[repo];
-  }
+	if (typeof reviews[repo] !== 'undefined' && Object.keys(reviews[repo]).length === 0) {
+		delete reviews[repo];
+	}
 }
