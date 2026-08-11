@@ -43,7 +43,7 @@ export interface GitCommitDetails {
   readonly fileChanges: ReadonlyArray<GitFileChange>;
 }
 
-export const enum GitSignatureStatus {
+export enum GitSignatureStatus {
   GoodAndValid = 'G',
   GoodWithUnknownValidity = 'U',
   GoodButExpired = 'X',
@@ -59,7 +59,7 @@ export interface GitSignature {
   readonly status: GitSignatureStatus;
 }
 
-export const enum GitConfigLocation {
+export enum GitConfigLocation {
   Local = 'local',
   Global = 'global',
   System = 'system',
@@ -73,7 +73,7 @@ export interface GitFileChange {
   readonly deletions: number | null;
 }
 
-export const enum GitFileStatus {
+export enum GitFileStatus {
   Added = 'A',
   Modified = 'M',
   Deleted = 'D',
@@ -81,7 +81,7 @@ export const enum GitFileStatus {
   Untracked = 'U',
 }
 
-export const enum GitPushBranchMode {
+export enum GitPushBranchMode {
   Normal = '',
   Force = 'force',
   ForceWithLease = 'force-with-lease',
@@ -122,7 +122,7 @@ export interface GitRepoSettingsRemote {
   readonly pushUrl: string | null;
 }
 
-export const enum GitResetMode {
+export enum GitResetMode {
   Soft = 'soft',
   Mixed = 'mixed',
   Hard = 'hard',
@@ -178,7 +178,7 @@ export interface PullRequestConfigBase {
   readonly destBranch: string;
 }
 
-export const enum PullRequestProvider {
+export enum PullRequestProvider {
   Bitbucket,
   Custom,
   GitHub,
@@ -333,18 +333,18 @@ export interface ReferenceLabelsConfig {
 
 /* Extension Settings Types */
 
-export const enum BooleanOverride {
+export enum BooleanOverride {
   Default,
   Enabled,
   Disabled,
 }
 
-export const enum CommitDetailsViewLocation {
+export enum CommitDetailsViewLocation {
   Inline,
   DockedToBottom,
 }
 
-export const enum CommitOrdering {
+export enum CommitOrdering {
   Date = 'date',
   AuthorDate = 'author-date',
   Topological = 'topo',
@@ -450,13 +450,13 @@ export interface DateFormat {
   readonly iso: boolean;
 }
 
-export const enum DateFormatType {
+export enum DateFormatType {
   DateAndTime,
   DateOnly,
   Relative,
 }
 
-export const enum DateType {
+export enum DateType {
   Author,
   Commit,
 }
@@ -522,52 +522,52 @@ export interface DialogDefaults {
   };
 }
 
-export const enum FileViewType {
+export enum FileViewType {
   Default,
   Tree,
   List,
 }
 
-export const enum GraphStyle {
+export enum GraphStyle {
   Rounded,
   Angular,
 }
 
-export const enum GraphUncommittedChangesStyle {
+export enum GraphUncommittedChangesStyle {
   OpenCircleAtTheUncommittedChanges,
   OpenCircleAtTheCheckedOutCommit,
 }
 
-export const enum RefLabelAlignment {
+export enum RefLabelAlignment {
   Normal,
   BranchesOnLeftAndTagsOnRight,
   BranchesAlignedToGraphAndTagsOnRight,
 }
 
-export const enum RepoCommitOrdering {
+export enum RepoCommitOrdering {
   Default = 'default',
   Date = 'date',
   AuthorDate = 'author-date',
   Topological = 'topo',
 }
 
-export const enum RepoDropdownOrder {
+export enum RepoDropdownOrder {
   FullPath,
   Name,
   WorkspaceFullPath,
 }
 
-export const enum SquashMessageFormat {
+export enum SquashMessageFormat {
   Default,
   GitSquashMsg,
 }
 
-export const enum TabIconColourTheme {
+export enum TabIconColourTheme {
   Colour,
   Grey,
 }
 
-export const enum TagType {
+export enum TagType {
   Annotated,
   Lightweight,
 }
@@ -592,7 +592,7 @@ export interface ResponseWithMultiErrorInfo extends BaseMessage {
 
 export type ErrorInfo = string | null; // null => no error, otherwise => error message
 
-export const enum ErrorInfoExtensionPrefix {
+export enum ErrorInfoExtensionPrefix {
   PushTagCommitNotOnRemote = 'VSCODE_GIT_GRAPH:PUSH_TAG:COMMIT_NOT_ON_REMOTE:',
 }
 
@@ -975,7 +975,7 @@ export interface ResponseLoadRepos extends BaseMessage {
   readonly loadViewTo: LoadGitGraphViewTo;
 }
 
-export const enum MergeActionOn {
+export enum MergeActionOn {
   Branch = 'Branch',
   RemoteTrackingBranch = 'Remote-tracking Branch',
   Commit = 'Commit',
@@ -1105,7 +1105,7 @@ export interface ResponsePushTag extends ResponseWithMultiErrorInfo {
   readonly commitHash: string;
 }
 
-export const enum RebaseActionOn {
+export enum RebaseActionOn {
   Branch = 'Branch',
   Commit = 'Commit',
 }

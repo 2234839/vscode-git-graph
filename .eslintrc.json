@@ -4,8 +4,7 @@
     "parserOptions": {
         "project": [
             "./src/tsconfig.json",
-            "./tests/tsconfig.json",
-            "./web/tsconfig.json"
+            "./tests/tsconfig.json"
         ]
     },
     "plugins": [

@@ -1,32 +1,15 @@
 /**
  * Git Graph WebView 入口
  *
- * 初始化 Vue3 应用 + Pinia 状态管理
- * 从全局变量（后端注入）读取初始状态，恢复视图状态
+ * 导入所有 CSS 和核心控制器 mainController.ts
+ * mainController.ts 内部通过 window.addEventListener('load', ...) 完成初始化
  */
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import App from './App.vue';
-import { useGitGraphStore } from './stores/gitGraph';
-import { getInitialState } from './types';
+import './lib/mainController';
 
-// 全局样式
+// 全局样式（顺序重要：main.css 先加载，组件样式覆盖）
 import './styles/main.css';
-
-const app = createApp(App);
-const pinia = createPinia();
-
-app.use(pinia);
-
-// 从后端注入的全局变量初始化 store
-const store = useGitGraphStore(pinia);
-const initialState = getInitialState();
-
-if (initialState) {
-  store.setRepos(initialState.repos);
-  if (initialState.lastActiveRepo) {
-    store.setCurrentRepo(initialState.lastActiveRepo);
-  }
-}
-
-app.mount('#app');
+import './styles/contextMenu.css';
+import './styles/dialog.css';
+import './styles/dropdown.css';
+import './styles/findWidget.css';
+import './styles/settingsWidget.css';

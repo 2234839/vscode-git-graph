@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { GitCommit, GitRepoSet } from '../../../out/types';
+import type { GitCommit, GitRepoSet } from 'backend-types';
 
 /**
  * Git Graph 主 Store

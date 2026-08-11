@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import commonjs from '@rollup/plugin-commonjs';
 import { resolve } from 'path';
 
 /**
@@ -17,11 +18,15 @@ import { resolve } from 'path';
  * - base 设为 './' 以适配 WebView 的 URI
  */
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    commonjs({ include: [resolve(__dirname, '../out/types.js')] }),
+    vue(),
+  ],
   base: './',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      'backend-types': resolve(__dirname, '../out/types'),
     },
   },
   build: {
