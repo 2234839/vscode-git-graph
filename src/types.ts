@@ -996,6 +996,11 @@ export interface ResponseMerge extends ResponseWithErrorInfo {
 export interface RequestOpenExtensionSettings extends BaseMessage {
   readonly command: 'openExtensionSettings';
 }
+
+export interface RequestSetLanguage extends BaseMessage {
+  readonly command: 'setLanguage';
+  readonly language: string;
+}
 export interface ResponseOpenExtensionSettings extends ResponseWithErrorInfo {
   readonly command: 'openExtensionSettings';
 }
@@ -1316,6 +1321,7 @@ export type RequestMessage =
   | RequestLoadRepos
   | RequestMerge
   | RequestOpenExtensionSettings
+  | RequestSetLanguage
   | RequestOpenExternalDirDiff
   | RequestOpenExternalUrl
   | RequestOpenFile

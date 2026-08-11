@@ -4,6 +4,7 @@ import { DataSource } from './dataSource';
 import { GitFileStatus } from './types';
 import { UNCOMMITTED, getPathFromStr } from './utils';
 import { Disposable, toDisposable } from './utils/disposable';
+import { t } from './i18n';
 
 export const enum DiffSide {
   Old,
@@ -67,11 +68,12 @@ export class DiffDocProvider extends Disposable implements vscode.TextDocumentCo
   					return document.value;
   				},
   				(errorMessage) => {
-  					return '无法获取文件：' + errorMessage;
+  					vscode.window.showErrorMessage(t('ddlUnableGetFile') + errorMessage);
+  					return '';
   				}
   			);
   	} catch (err) {
-  		return `provideTextDocumentContent 内部错误: ${err instanceof Error ? err.message : err}`;
+  		return t('ddlInternalError') + (err instanceof Error ? err.message : err);
   	}
   }
 }

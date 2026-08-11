@@ -5,16 +5,16 @@ import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffDocProvider } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
-import { initI18nBackend } from './i18n';
+import { initI18nBackend, t } from './i18n';
 import { onStartUp } from './life-cycle/startup';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import { StatusBarItem } from './statusBarItem';
 import {
 	GitExecutable,
-	UNABLE_TO_FIND_GIT_MSG,
 	findGit,
 	getGitExecutableFromPaths,
+	getUnableToFindGitMsg,
 	showErrorMessage,
 	showInformationMessage
 } from './utils';
@@ -42,8 +42,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger.log('Using ' + gitExecutable.path + ' (version: ' + gitExecutable.version + ')');
 	} catch (_) {
 		gitExecutable = null;
-		showErrorMessage(UNABLE_TO_FIND_GIT_MSG);
-		logger.logError(UNABLE_TO_FIND_GIT_MSG);
+		const unableMsg = getUnableToFindGitMsg();
+		showErrorMessage(unableMsg);
+		logger.logError(unableMsg);
 	}
 
 	const configurationEmitter = new EventEmitter<vscode.ConfigurationChangeEvent>();
@@ -89,24 +90,16 @@ export async function activate(context: vscode.ExtensionContext) {
 					(gitExecutable) => {
 						gitExecutableEmitter.emit(gitExecutable);
 						const msg =
-              'Git Graph 现在使用 ' +
-              gitExecutable.path +
-              '（版本：' +
-              gitExecutable.version +
-              '）';
+              t('extNowUsingMsg', gitExecutable.path, gitExecutable.version);
 						showInformationMessage(msg);
 						logger.log(msg);
 						repoManager.searchWorkspaceForRepos();
 					},
 					() => {
 						const msg =
-              '"git.path" 的新值（"' +
-              paths.join('", "') +
-              '"）' +
-              (paths.length > 1 ?
-              	'不包含与有效 Git 可执行文件路径和文件名匹配的字符串'
-              	: '与有效 Git 可执行文件的路径和文件名不匹配') +
-              '。';
+              (paths.length > 1
+              	? t('extNewValueNotValid', paths.join('", "'))
+              	: t('extNewValueNotMatch', paths.join('", "')));
 						showErrorMessage(msg);
 						logger.logError(msg);
 					}

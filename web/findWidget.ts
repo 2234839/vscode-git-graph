@@ -35,7 +35,7 @@ class FindWidget {
   	this.widgetElem = document.createElement('div');
   	this.widgetElem.className = 'findWidget';
   	this.widgetElem.innerHTML =
-      '<input id="findInput" type="text" placeholder="查找" disabled/><span id="findCaseSensitive" class="findModifier" title="区分大小写">Aa</span><span id="findRegex" class="findModifier" title="使用正则表达式">.*</span><span id="findPosition"></span><span id="findPrev" title="上一个匹配项 (Shift+Enter)"></span><span id="findNext" title="下一个匹配项 (Enter)"></span><span id="findOpenCdv" title="为当前匹配项打开提交详情视图"></span><span id="findClose" title="关闭 (Escape)"></span>';
+      '<input id="findInput" type="text" placeholder="' + t('findPlaceholder') + '" disabled/><span id="findCaseSensitive" class="findModifier" title="' + t('matchCase') + '">Aa</span><span id="findRegex" class="findModifier" title="' + t('useRegex') + '">.*</span><span id="findPosition"></span><span id="findPrev" title="' + t('prevMatch') + '"></span><span id="findNext" title="' + t('nextMatch') + '"></span><span id="findOpenCdv" title="' + t('openMatchInCdv') + '"></span><span id="findClose" title="' + t('closeEscape') + '"></span>';
   	document.body.appendChild(this.widgetElem);
 
   	this.inputElem = <HTMLInputElement>document.getElementById('findInput')!;
@@ -341,7 +341,7 @@ class FindWidget {
   				}
   			}
   			if (zeroLengthMatch) {
-  				this.widgetElem.setAttribute(ATTR_ERROR, '不能使用会产生零长度匹配的正则表达式');
+  			this.widgetElem.setAttribute(ATTR_ERROR, t('regexZeroLength'));
   				this.clearMatches();
   				this.matches = [];
   			}
@@ -414,8 +414,8 @@ class FindWidget {
   	}
   	this.positionElem.innerHTML =
       this.matches.length > 0 ?
-      	'第 ' + (this.position + 1) + ' / ' + this.matches.length + ' 个'
-      	: '无结果';
+      	t('resultPosition', this.position + 1, this.matches.length)
+      	: t('noResults');
   	this.view.saveState();
   }
 

@@ -49,6 +49,7 @@ import {
 	resolveSpawnOutput,
 	showErrorMessage
 } from './utils';
+import { t } from './i18n';
 import { Disposable } from './utils/disposable';
 import { GgEvent } from './utils/event';
 
@@ -595,7 +596,7 @@ export class DataSource extends Disposable {
   				return {};
   			}
   		} else {
-  			errorMessage = '启动 Git 子进程时发生意外错误。';
+  			errorMessage = t('dsGitSubprocessError');
   		}
   		throw errorMessage;
   	})) as Promise<ActionedUser[]>;
@@ -1529,7 +1530,7 @@ export class DataSource extends Disposable {
   			'rebase --interactive ' +
           (getConfig().signCommits ? '-S ' : '') +
           (actionOn === RebaseActionOn.Branch ? obj.replace(/'/g, '"\'"') : obj),
-  			'变基于 "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
+  			t('dsRebasing') + ' "' + (actionOn === RebaseActionOn.Branch ? obj : abbrevCommit(obj)) + '"'
   		);
   	} else {
   		const args = ['rebase', obj];
@@ -1866,7 +1867,7 @@ export class DataSource extends Disposable {
   					}
   				});
   			} else {
-  				openGitTerminal(repo, this.gitExecutable.path, args.join(' '), '打开外部目录比较');
+  				openGitTerminal(repo, this.gitExecutable.path, args.join(' '), t('dsOpenExternalDirCompare'));
   			}
   			setTimeout(() => resolve(null), 1500);
   		}
@@ -2016,7 +2017,7 @@ export class DataSource extends Disposable {
   				return {};
   			}
   		} else {
-  			errorMessage = '启动 Git 子进程时发生意外错误。';
+  			errorMessage = t('dsGitSubprocessError');
   		}
   		throw errorMessage;
   	});
@@ -2493,7 +2494,7 @@ export class DataSource extends Disposable {
   				args.push('-S');
   			}
   			if (squashMessageFormat === SquashMessageFormat.Default) {
-  				args.push('-m', '合并 ' + actionOn.toLowerCase() + ' \'' + obj + '\'');
+  				args.push('-m', t('dsMerging') + ' ' + actionOn.toLowerCase() + ' \'' + obj + '\'');
   			} else {
   				args.push('--no-edit');
   			}

@@ -20,13 +20,13 @@ import {
 	TabIconColourTheme
 } from './types';
 import {
-	UNABLE_TO_FIND_GIT_MSG,
 	UNCOMMITTED,
 	archive,
 	copyFilePathToClipboard,
 	copyToClipboard,
 	createPullRequest,
 	getNonce,
+	getUnableToFindGitMsg,
 	openExtensionSettings,
 	openExternalUrl,
 	openFile,
@@ -679,6 +679,9 @@ export class GitGraphView extends Disposable {
   				error: await openExtensionSettings()
   			});
   			break;
+  		case 'setLanguage':
+  			await vscode.workspace.getConfiguration('git-graph').update('language', msg.language, vscode.ConfigurationTarget.Global);
+  			break;
   		case 'openExternalDirDiff':
   			this.sendMessage({
   				command: 'openExternalDirDiff',
@@ -789,7 +792,7 @@ export class GitGraphView extends Disposable {
   			break;
   		case 'rescanForRepos':
   			if (!(await this.repoManager.searchWorkspaceForRepos())) {
-  				showErrorMessage('在当前工作区中未找到 Git 仓库。');
+  				showErrorMessage(t('noReposInWorkspace'));
   			}
   			break;
   		case 'resetFileToRevision':
@@ -1010,24 +1013,24 @@ export class GitGraphView extends Disposable {
 
   	if (this.dataSource.isGitExecutableUnknown()) {
   		body = `<body class="unableToLoad">
-			<h2>${t('无法加载 Git Graph')}</h2>
-			<p class="unableToLoadMessage">${UNABLE_TO_FIND_GIT_MSG}</p>
+			<h2>${t('unableLoadGitGraph')}</h2>
+			<p class="unableToLoadMessage">${getUnableToFindGitMsg()}</p>
 			</body>`;
   	} else if (numRepos > 0) {
   		const stickyClassAttr = initialState.config.stickyHeader ? ' class="sticky"' : '';
   		body = `<body>
 			<div id="view" tabindex="-1">
 				<div id="controls"${stickyClassAttr}>
-				<span id="repoControl"><span class="unselectable">仓库: </span><div id="repoDropdown" class="dropdown"></div></span>
-				<span id="branchControl"><span class="unselectable">分支: </span><div id="branchDropdown" class="dropdown"></div></span>
-				<span id="authorControl"><span class="unselectable">作者: </span><div id="authorDropdown" class="dropdown"></div></span>
-				<span id="tagControl"><span class="unselectable">标签: </span><div id="tagDropdown" class="dropdown"></div></span>
+				<span id="repoControl"><span class="unselectable">${t('repoColon')}</span><div id="repoDropdown" class="dropdown"></div></span>
+				<span id="branchControl"><span class="unselectable">${t('branchColon')}</span><div id="branchDropdown" class="dropdown"></div></span>
+				<span id="authorControl"><span class="unselectable">${t('authorColon')}</span><div id="authorDropdown" class="dropdown"></div></span>
+				<span id="tagControl"><span class="unselectable">${t('tagColon')}</span><div id="tagDropdown" class="dropdown"></div></span>
 
-				<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" tabindex="-1"><span class="customCheckbox"></span>显示远程分支</label>
-				<div id="currentBtn" title="当前"></div>
-				<div id="findBtn" title="查找"></div>
-				<div id="terminalBtn" title="为此仓库打开终端"></div>
-				<div id="settingsBtn" title="仓库设置"></div>
+				<label id="showRemoteBranchesControl"><input type="checkbox" id="showRemoteBranchesCheckbox" tabindex="-1"><span class="customCheckbox"></span>${t('showRemoteBranches')}</label>
+				<div id="currentBtn" title="${t('current')}"></div>
+				<div id="findBtn" title="${t('find')}"></div>
+				<div id="terminalBtn" title="${t('openTerminal')}"></div>
+				<div id="settingsBtn" title="${t('repoSettings')}"></div>
 					<div id="fetchBtn"></div>
 					<div id="refreshBtn"></div>
 				</div>
@@ -1042,10 +1045,10 @@ export class GitGraphView extends Disposable {
 			</body>`;
   	} else {
   		body = `<body class="unableToLoad">
-			<h2>${t('无法加载 Git Graph')}</h2>
-			<p class="unableToLoadMessage">${t('Git Graph 上次扫描时未在当前工作区中找到 Git 仓库。')}</p>
-			<p>${t('如果您的仓库位于打开的工作区文件夹的子文件夹中，请确保已正确设置 Git Graph 设置 "git-graph.maxDepthOfRepoSearch"（阅读')}<a href="https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">${t('文档')}</a>${t('了解更多信息）。')}</p>
-			<p><div id="rescanForReposBtn" class="roundedBtn">${t('重新扫描当前工作区以查找仓库')}</div></p>
+			<h2>${t('unableLoadGitGraph')}</h2>
+			<p class="unableToLoadMessage">${t('noReposFound')}</p>
+			<p>${t('maxDepthSearchPrefix')}<a href="https://github.com/hansu/vscode-git-graph/wiki/Extension-Settings#max-depth-of-repo-search" target="_blank">${t('documentation')}</a>${t('maxDepthSearchSuffix')}</p>
+			<p><div id="rescanForReposBtn" class="roundedBtn">${t('rescanWorkspace')}</div></p>
 			<script nonce="${nonce}">(function(){ var api = acquireVsCodeApi(); document.getElementById('rescanForReposBtn').addEventListener('click', function(){ api.postMessage({command: 'rescanForRepos'}); }); })();</script>
 			</body>`;
   	}

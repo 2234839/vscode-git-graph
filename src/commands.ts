@@ -6,6 +6,7 @@ import { DataSource } from './dataSource';
 import { DiffDocProvider, decodeDiffDocUri } from './diffDocProvider';
 import { CodeReviewData, CodeReviews, ExtensionState } from './extensionState';
 import { GitGraphView } from './gitGraphView';
+import { t } from './i18n';
 import { Logger } from './logger';
 import { RepoManager } from './repoManager';
 import {
@@ -208,17 +209,13 @@ export class CommandManager extends Disposable {
   					if (isPathInWorkspace(path)) {
   						this.repoManager.registerRepo(path, false).then((status) => {
   							if (status.error === null) {
-  								showInformationMessage('仓库 "' + status.root! + '" 已添加到 Git Graph。');
+  								showInformationMessage(t('cmdAddedToGGVar', status.root!));
   							} else {
-  								showErrorMessage(status.error + ' 因此无法将其添加到 Git Graph。');
+  								showErrorMessage(status.error + t('cmdCouldNotAdd'));
   							}
   						});
   					} else {
-  						showErrorMessage(
-  							'文件夹 "' +
-                  path +
-                  '" 不在当前打开的 Visual Studio Code 工作区内，因此无法添加到 Git Graph。'
-  						);
+  						showErrorMessage(t('cmdFolderNotInWorkspace', path));
   					}
   				}
   			},
@@ -246,16 +243,16 @@ export class CommandManager extends Disposable {
 
   	vscode.window
   		.showQuickPick(items, {
-  			placeHolder: '选择要从 Git Graph 中移除的仓库：',
+  			placeHolder: t('cmdSelectRepoRemove'),
   			canPickMany: false
   		})
   		.then(
   			(item) => {
   				if (item && item.description !== undefined) {
   					if (this.repoManager.ignoreRepo(item.description)) {
-  						showInformationMessage('仓库 "' + item.label + '" 已从 Git Graph 中移除。');
+  						showInformationMessage(t('cmdRemovedFromGGVar', item.label));
   					} else {
-  						showErrorMessage('Git Graph 不识别仓库 "' + item.label + '"。');
+  						showErrorMessage(t('cmdNotRecognisedRepoVar', item.label));
   					}
   				}
   			},
@@ -270,13 +267,13 @@ export class CommandManager extends Disposable {
   	this.avatarManager.clearCache().then(
   		(errorInfo) => {
   			if (errorInfo === null) {
-  				showInformationMessage('头像缓存已成功清除。');
+  				showInformationMessage(t('cmdAvatarCleared'));
   			} else {
   				showErrorMessage(errorInfo);
   			}
   		},
   		() => {
-  			showErrorMessage('运行命令"清除头像缓存"时发生意外错误。');
+  			showErrorMessage(t('cmdRunningCmdError', t('cmdClearAvatar')));
   		}
   	);
   }
@@ -305,7 +302,7 @@ export class CommandManager extends Disposable {
 
   		vscode.window
   			.showQuickPick(items, {
-  				placeHolder: '选择要在 Git Graph 中打开并从远程获取的仓库：',
+  				placeHolder: t('cmdSelectRepoFetch'),
   				canPickMany: false
   			})
   			.then(
@@ -326,7 +323,7 @@ export class CommandManager extends Disposable {
   					}
   				},
   				() => {
-  					showErrorMessage('运行命令"从远程获取"时发生意外错误。');
+  					showErrorMessage(t('cmdRunningCmdError', t('cmdFetch')));
   				}
   			);
   	} else if (repoPaths.length === 1) {
@@ -360,7 +357,7 @@ export class CommandManager extends Disposable {
    */
   private endAllWorkspaceCodeReviews() {
   	this.extensionState.endAllWorkspaceCodeReviews();
-  	showInformationMessage('已结束工作区中的所有代码审查');
+  	showInformationMessage(t('cmdEndAllCR'));
   }
 
   /**
@@ -369,13 +366,13 @@ export class CommandManager extends Disposable {
   private endSpecificWorkspaceCodeReview() {
   	const codeReviews = this.extensionState.getCodeReviews();
   	if (Object.keys(codeReviews).length === 0) {
-  		showErrorMessage('当前工作区中没有正在进行的代码审查。');
+  		showErrorMessage(t('cmdNoActiveCR'));
   		return;
   	}
 
   	vscode.window
   		.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
-  			placeHolder: '选择要结束的代码审查：',
+  			placeHolder: t('cmdSelectEndCR'),
   			canPickMany: false
   		})
   		.then(
@@ -384,7 +381,7 @@ export class CommandManager extends Disposable {
   					this.extensionState.endCodeReview(item.codeReviewRepo, item.codeReviewId).then(
   						(errorInfo) => {
   							if (errorInfo === null) {
-  								showInformationMessage('已成功结束代码审查"' + item.label + '"。');
+  								showInformationMessage(t('cmdEndCRSuccessVar', item.label));
   							} else {
   								showErrorMessage(errorInfo);
   							}
@@ -394,7 +391,7 @@ export class CommandManager extends Disposable {
   				}
   			},
   			() => {
-  				showErrorMessage('运行命令"结束工作区中的特定代码审查..."时发生意外错误。');
+  				showErrorMessage(t('cmdRunningCmdError', t('cmdEndCR')));
   			}
   		);
   }
@@ -405,13 +402,13 @@ export class CommandManager extends Disposable {
   private resumeWorkspaceCodeReview() {
   	const codeReviews = this.extensionState.getCodeReviews();
   	if (Object.keys(codeReviews).length === 0) {
-  		showErrorMessage('当前工作区中没有正在进行的代码审查。');
+  		showErrorMessage(t('cmdNoActiveCR'));
   		return;
   	}
 
   	vscode.window
   		.showQuickPick(this.getCodeReviewQuickPickItems(codeReviews), {
-  			placeHolder: '选择要恢复的代码审查：',
+  			placeHolder: t('cmdSelectCR'),
   			canPickMany: false
   		})
   		.then(
@@ -436,7 +433,7 @@ export class CommandManager extends Disposable {
   				}
   			},
   			() => {
-  				showErrorMessage('运行命令"恢复工作区中的特定代码审查..."时发生意外错误。');
+  				showErrorMessage(t('cmdRunningCmdError', t('cmdRestoreCR')));
   			}
   		);
   }
@@ -461,22 +458,22 @@ export class CommandManager extends Disposable {
   		repo = repoOptions[0];
   	} else {
   		const selectedRepo = await vscode.window.showQuickPick(repoOptions, {
-  			placeHolder: '选择要搜索的仓库'
+  			placeHolder: t('cmdSelectRepo')
   		});
   		if (!selectedRepo) return;
   		repo = selectedRepo;
   	}
 
   	const query = await vscode.window.showInputBox({
-  		prompt: '按提交消息、作者或哈希值搜索提交历史（支持正则表达式）',
-  		placeHolder: '输入搜索关键词'
+  		prompt: t('cmdSearchCommitsDesc'),
+  		placeHolder: t('cmdSearchCommitsPlaceholder')
   	});
   	if (typeof query !== 'string' || query.trim() === '') return;
 
   	try {
   		const commits = await this.dataSource.searchHistory(repo, query.trim());
   		if (commits.length === 0) {
-  			vscode.window.showInformationMessage('未找到匹配该查询的提交。');
+  			vscode.window.showInformationMessage(t('cmdNoCommitsFound'));
   			return;
   		}
   		const items = commits.map((c) => ({
@@ -486,7 +483,7 @@ export class CommandManager extends Disposable {
   			commitHash: c.hash
   		}));
   		const selected = await vscode.window.showQuickPick(items, {
-  			placeHolder: '选择要在 Git Graph 中查看的提交',
+  			placeHolder: t('cmdSelectCommit'),
   			matchOnDescription: true,
   			matchOnDetail: true
   		});
@@ -502,7 +499,7 @@ export class CommandManager extends Disposable {
   			);
   		}
   	} catch (err) {
-  		showErrorMessage('搜索提交历史时出错。');
+  		showErrorMessage(t('cmdSearchError'));
   	}
   }
 
@@ -514,17 +511,17 @@ export class CommandManager extends Disposable {
         gitGraphVersion +
         '\nVisual Studio Code: ' +
         vscode.version +
-        '\n操作系统: ' +
+        t('cmdOs') +
         os.type() +
         ' ' +
         os.arch() +
         ' ' +
         os.release() +
         '\nGit: ' +
-        (this.gitExecutable !== null ? this.gitExecutable.version : '(无)');
-  		vscode.window.showInformationMessage(information, { modal: true }, '复制').then(
+        (this.gitExecutable !== null ? this.gitExecutable.version : t('cmdNone'));
+  		vscode.window.showInformationMessage(information, { modal: true }, t('cmdCopy')).then(
   			(selectedItem) => {
-  				if (selectedItem === '复制') {
+  				if (selectedItem === t('cmdCopy')) {
   					copyToClipboard(information).then((result) => {
   						if (result !== null) {
   							showErrorMessage(result);
@@ -535,7 +532,7 @@ export class CommandManager extends Disposable {
   			() => {}
   		);
   	} catch (_) {
-  		showErrorMessage('获取版本信息时发生意外错误。');
+  		showErrorMessage(t('cmdVersionError'));
   	}
   }
 
@@ -557,11 +554,11 @@ export class CommandManager extends Disposable {
   			vscode.ViewColumn.Active
   		).then((errorInfo) => {
   			if (errorInfo !== null) {
-  				return showErrorMessage('无法打开文件：' + errorInfo);
+  				return showErrorMessage(t('cmdUnableOpenFile') + errorInfo);
   			}
   		});
   	} else {
-  		return showErrorMessage('无法打开文件：该命令未使用所需参数调用。');
+  		return showErrorMessage(t('cmdUnableOpenFileNoArgs'));
   	}
   }
 
@@ -611,7 +608,7 @@ export class CommandManager extends Disposable {
   				commitSubjects[fetchCommits[i].repo] = {};
   			}
   			commitSubjects[fetchCommits[i].repo][fetchCommits[i].commitHash] =
-          subject !== null ? subject : '<未知提交主题>';
+          subject !== null ? subject : t('cmdUnknownSubject');
   		});
 
   		return enrichedCodeReviews

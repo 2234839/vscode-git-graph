@@ -4,6 +4,7 @@ import { Logger } from './logger';
 import { RepoChangeEvent } from './repoManager';
 import { Disposable } from './utils/disposable';
 import { GgEvent } from './utils/event';
+import { t } from './i18n';
 
 /**
  * Manages the Git Graph Status Bar Item, which allows users to open the Git Graph View from the Visual Studio Code Status Bar.
@@ -30,7 +31,7 @@ export class StatusBarItem extends Disposable {
 
   	const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
   	statusBarItem.text = 'Git Graph';
-  	statusBarItem.tooltip = '查看 Git Graph';
+  	statusBarItem.tooltip = t('sbiViewGitGraph');
   	statusBarItem.command = 'git-graph.view';
   	this.statusBarItem = statusBarItem;
 

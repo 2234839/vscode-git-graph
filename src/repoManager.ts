@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DEFAULT_REPO_STATE, ExtensionState } from './extensionState';
+import { t } from './i18n';
 import { Logger } from './logger';
 import {
 	BooleanOverride,
@@ -239,11 +240,11 @@ export class RepoManager extends Disposable {
   	return new Promise<{ root: string | null; error: string | null }>(async (resolve) => {
   		let root = await this.dataSource.repoRoot(path);
   		if (root === null) {
-  			resolve({ root: null, error: '文件夹 "' + path + '" 不是 Git 仓库。' });
+  			resolve({ root: null, error: t('rmFolderNotGitRepo', path) });
   		} else if (typeof this.repos[root] !== 'undefined') {
   			resolve({
   				root: null,
-  				error: '文件夹 "' + path + '" 包含在已知的仓库 "' + root + '" 中。'
+  				error: t('rmFolderAlreadyIncluded', path, root)
   			});
   		} else {
   			if (this.ignoredRepos.includes(root)) {
@@ -740,38 +741,34 @@ export class RepoManager extends Disposable {
   			const validationError = validateExternalConfigFile(file);
   			if (validationError === null) {
   				const action =
-            isRepoNew ? '是' : (
+            isRepoNew ? t('rmYes') : (
             	await vscode.window.showInformationMessage(
-            		'检测到仓库 "' +
-                  (state.name || getRepoName(repo)) +
-                  '" 有更新的 Git Graph 仓库配置文件。是否要用新的更改覆盖当前的仓库配置？',
-            		'是',
-            		'否'
+            		t('rmNewerConfigPrompt', state.name || getRepoName(repo)),
+            		t('rmYes'),
+            		t('rmNo')
             	)
             );
   				if (this.isKnownRepo(repo) && action) {
   					const state = this.repos[repo];
-  					if (action === '是') {
+  					if (action === t('rmYes')) {
   						applyExternalConfigFile(file, state);
   					}
   					state.lastImportAt = file.exportedAt;
   					this.extensionState.saveRepos(this.repos);
-  					if (!isRepoNew && action === '是') {
+  					if (!isRepoNew && action === t('rmYes')) {
   						showInformationMessage(
-  							'已成功为仓库 "' +
-                  (state.name || getRepoName(repo)) +
-                  '" 导入 Git Graph 仓库配置。'
+  							t('rmConfigRepoSuccessVar', state.name || getRepoName(repo))
   						);
   					}
   					return true;
   				}
   			} else {
   				showErrorMessage(
-  					'配置文件 "' +
-              getPathFromStr(path.join(repo, '.vscode', 'vscode-git-graph.json')) +
-              '" 中 "' +
-              validationError +
-              '" 的值无效。'
+  					t(
+  						'rmInvalidConfigValue',
+  						getPathFromStr(path.join(repo, '.vscode', 'vscode-git-graph.json')),
+  						validationError
+  					)
   				);
   			}
   		}
@@ -946,16 +943,14 @@ function writeExternalConfigFile(repo: string, file: ExternalRepoConfig.File) {
 				const configPath = path.join(vscodePath, 'vscode-git-graph.json');
 				fs.writeFile(configPath, JSON.stringify(file, null, 4), (err) => {
 					if (err) {
-						reject('无法将 Git Graph 仓库配置文件写入 "' + getPathFromStr(configPath) + '"。');
+						reject(t('rmUnableWriteConfigVar', getPathFromStr(configPath)));
 					} else {
-						resolve('已成功将 Git Graph 仓库配置导出到 "' + getPathFromStr(configPath) + '"。');
+						resolve(t('rmExportSuccessVar', getPathFromStr(configPath)));
 					}
 				});
 			} else {
 				reject(
-					'检查 "' +
-            getPathFromStr(vscodePath) +
-            '" 目录是否存在时发生意外错误。此目录用于存储 Git Graph 仓库配置文件。'
+					t('rmCheckDirErrorVar', getPathFromStr(vscodePath))
 				);
 			}
 		});

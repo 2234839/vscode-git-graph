@@ -6,6 +6,7 @@ import { getConfig } from './config';
 import { DataSource } from './dataSource';
 import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
+import { t } from './i18n';
 import {
 	ErrorInfo,
 	GitFileStatus,
@@ -16,8 +17,14 @@ import {
 } from './types';
 
 export const UNCOMMITTED = '*';
-export const UNABLE_TO_FIND_GIT_MSG =
-  '无法找到 Git 可执行文件。请：将 Visual Studio Code 设置 "git.path" 设为现有 Git 可执行文件的路径和文件名，或者安装 Git 并重启 Visual Studio Code。';
+
+/** Localized "Unable to find Git" message (evaluated at module load with default language). */
+export const UNABLE_TO_FIND_GIT_MSG = t('utilsUnableFindGitFull');
+
+/** Get the localized "Unable to find Git" message at runtime (respects active language). */
+export function getUnableToFindGitMsg(): string {
+	return t('utilsUnableFindGitFull');
+}
 
 /* Path Manipulation */
 
@@ -975,12 +982,10 @@ export function constructIncompatibleGitVersionMessage(
 	version: GitVersionRequirement,
 	feature?: string
 ) {
-	return (
-		(feature ? feature : '此功能') +
-    '需要更新版本的 Git (>= ' +
-    version +
-    ')。当前安装的是 Git ' +
-    executable.version +
-    '。请安装更新版本的 Git 以使用此功能。'
+	return t(
+		'utilsIncompatibleGit',
+		(feature ? feature : t('utilsThisFeature')),
+		version,
+		executable.version
 	);
 }

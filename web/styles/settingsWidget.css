@@ -263,3 +263,38 @@
 	margin-left:5px;
 	vertical-align:middle;
 }
+
+/* Language Selector */
+#settingsWidget .settingsRow {
+	display: flex;
+	align-items: center;
+	margin-bottom: 12px;
+	padding: 0 4px;
+}
+#settingsWidget .settingLabel {
+	flex: 0 0 auto;
+	margin-right: 12px;
+	font-size: 13px;
+}
+#settingsWidget .languageSelector {
+	display: flex;
+	gap: 4px;
+}
+#settingsWidget .langBtn {
+	padding: 4px 12px;
+	border: 1px solid var(--vscode-input-border, #3c3c3c);
+	background: var(--vscode-button-secondaryBackground, #3a3d41);
+	color: var(--vscode-button-secondaryForeground, #ffffff);
+	cursor: pointer;
+	font-size: 12px;
+	border-radius: 2px;
+	transition: background 0.15s;
+}
+#settingsWidget .langBtn:hover {
+	background: var(--vscode-button-hoverBackground, #4a4d51);
+}
+#settingsWidget .langBtn.active {
+	background: var(--vscode-button-background, #0e639c);
+	color: var(--vscode-button-foreground, #ffffff);
+	border-color: var(--vscode-button-background, #0e639c);
+}

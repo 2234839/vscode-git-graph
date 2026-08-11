@@ -130,7 +130,7 @@ class Dialog {
   		DialogType.Form,
   		message,
   		actionName,
-  		'取消',
+  		t('cancel'),
   		() => {
   			this.close();
   			actioned();
@@ -301,7 +301,7 @@ class Dialog {
   	actionName: string,
   	actioned: (values: DialogInputValue[]) => void,
   	target: DialogTarget | null,
-  	secondaryActionName: string = '取消',
+  	secondaryActionName: string = t('cancel'),
   	secondaryActioned: ((values: DialogInputValue[]) => void) | null = null,
   	includeLineBreak: boolean = true
   ) {
@@ -508,7 +508,7 @@ class Dialog {
   			alterClass(this.elem, CLASS_DIALOG_NO_INPUT, noInput);
   			if (alterClass(this.elem, CLASS_DIALOG_INPUT_INVALID, !noInput && invalidInput)) {
   				dialogAction.title =
-            invalidInput ? '无法' + actionName + '，输入了一个或多个无效字符。' : '';
+            invalidInput ? t('invalidInput', actionName) : '';
   			}
   		});
   	}
@@ -527,7 +527,7 @@ class Dialog {
    * @param html The HTML to display in the dialog.
    */
   public showMessage(html: string) {
-  	this.show(DialogType.Message, html, null, '关闭', null, null, null);
+  	this.show(DialogType.Message, html, null, t('close'), null, null, null);
   }
 
   /**
@@ -547,7 +547,7 @@ class Dialog {
   		DialogType.Message,
   		'<span class="dialogAlert">' +
         SVG_ICONS.alert +
-        '错误：' +
+        t('errorPrefix') +
         message +
         '</span>' +
         (reason !== null ?
@@ -556,7 +556,7 @@ class Dialog {
           '</span>'
         	: ''),
   		actionName,
-  		'关闭',
+  		t('close'),
   		() => {
   			this.close();
   			if (actioned !== null) actioned();
@@ -575,7 +575,7 @@ class Dialog {
   		DialogType.ActionRunning,
   		'<span class="actionRunning">' + SVG_ICONS.loading + action + ' ...</span>',
   		null,
-  		'关闭',
+  		t('close'),
   		null,
   		null,
   		null

@@ -86,7 +86,8 @@ export const env = {
 	clipboard: {
 		writeText: jest.fn()
 	},
-	openExternal: jest.fn()
+	openExternal: jest.fn(),
+	language: 'en'
 };
 
 export const EventEmitter = jest.fn(() => ({
