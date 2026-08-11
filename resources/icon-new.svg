@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1e"/>
+      <stop offset="100%" stop-color="#1a1a3a"/>
+    </linearGradient>
+    <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 圆角背景 -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+
+  <!-- G 字主体：粗壮的弧线+横杠，小尺寸下更清晰 -->
+  <!-- 弧线 -->
+  <path d="M 700 340 A 260 260 0 1 0 700 684 L 480 684"
+        stroke="url(#gGrad)" stroke-width="88" fill="none"
+        stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+  <!-- 横杠 -->
+  <path d="M 700 512 L 480 512"
+        stroke="url(#gGrad)" stroke-width="88" fill="none"
+        stroke-linecap="round"/>
+
+  <!-- 分支装饰：从横杠上方分出 -->
+  <line x1="590" y1="512" x2="590" y2="360" stroke="#22d3ee" stroke-width="20" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="590" cy="348" r="28" fill="#22d3ee" opacity="0.9"/>
+  <circle cx="590" cy="348" r="14" fill="#0f0f1e" opacity="0.4"/>
+
+  <!-- 分支装饰：从底部向下延伸 -->
+  <line x1="480" y1="684" x2="480" y2="800" stroke="#4ade80" stroke-width="20" stroke-linecap="round" opacity="0.75"/>
+  <circle cx="480" cy="816" r="24" fill="#4ade80" opacity="0.85"/>
+  <circle cx="480" cy="816" r="12" fill="#0f0f1e" opacity="0.4"/>
+
+  <!-- G 弧线两端的 commit 圆点 -->
+  <circle cx="700" cy="340" r="38" fill="#0f0f1e"/>
+  <circle cx="700" cy="340" r="22" fill="#fb923c"/>
+
+  <circle cx="700" cy="684" r="38" fill="#0f0f1e"/>
+  <circle cx="700" cy="684" r="22" fill="#c084fc"/>
+</svg>
