@@ -18,8 +18,13 @@ export default defineConfig({
   ],
   format: 'cjs',
   outDir: 'out',
-  /** vscode 由 VS Code 运行时提供；fs 由 package-src.js 后处理 */
+  /**
+   * vscode 由 VS Code 运行时提供
+   * 其他所有依赖（iconv-lite 等）全部内联 bundle
+   */
   external: ['vscode'],
+  /** 强制内联 dependencies（默认会被 external 排除） */
+  noExternal: [/^iconv-lite$/, /^safer-buffer$/],
   /** 输出 .js 而非 .cjs（package.json main 指向 ./out/extension.js） */
   outExtensions: () => ({ js: '.js' }),
   sourcemap: true,
