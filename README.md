@@ -2,7 +2,44 @@
 
 查看 Git 仓库的分支与标签图谱，并直接在图谱上执行 Git 操作。
 
-本扩展是基于 [Git Graph](https://github.com/mhutchie/vscode-git-graph) 的中文化增强 fork，在原版基础上进行了界面全面中文化、问题修复和功能增强。
+本扩展是基于 [Git Graph](https://github.com/mhutchie/vscode-git-graph) 的中文化增强 fork，在原版基础上进行了 **Vue3 架构重写**、界面全面中文化、分支颜色稳定性优化、构建现代化等深度改进。
+
+## 相比原项目的改进
+
+### 🏗️ 架构重写：Vue3 声明式渲染
+
+原项目使用原生 JavaScript + 手动 DOM 操作（`innerHTML` 拼接），本 fork 将整个 WebView 前端迁移到 **Vue 3 + Vite + Pinia + TypeScript** 声明式架构：
+
+- **组件化**：CommitGraph、CommitTable、CommitDetails、Controls 等拆分为独立 Vue 组件，CSS 采用 scoped 隔离
+- **状态管理**：用 Pinia store 统一管理 Git Graph 状态，告别手动 DOM 同步
+- **类型安全**：前后端共享 TypeScript 类型定义，消除类型不一致隐患
+- **CSS 组件化**：1052 行全局 CSS 拆解到各组件 scoped 样式，杜绝样式冲突
+
+### 🎨 分支颜色稳定性
+
+原项目中合并后的分支颜色会重复或突变。本 fork 实现了**基于分支名分配颜色**的算法，彻底解耦 lane（泳道）与颜色，保证同一条分支在历史中颜色始终一致。
+
+### 🌍 国际化与中文化
+
+- 界面全面中文化，命令面板、右键菜单、设置项均为中文
+- 重写国际化系统为语义 key 方式，支持 **UI 语言切换**（auto/zh/en）
+- VS Code 命令直接显示中文（如 `Git Graph: 查看 Git Graph（git log）`）
+
+### ⚡ 构建现代化
+
+| 项目 | 原项目 | 本 fork |
+|---|---|---|
+| 后端构建 | tsc 散列编译 | **tsdown bundle**，依赖内联 |
+| VSIX 大小 | ~14 MB（含全部 node_modules） | **~380 KB**（零 node_modules） |
+| 前端构建 | 手写 uglify-js 压缩 | **Vite + Vue3**，HMR 热更新开发 |
+| 依赖管理 | 整个 node_modules 打包 | 运行时零依赖（iconv-lite 内联） |
+
+### ✨ 功能增强
+
+- **历史搜索**：新增 `Search Commits in History...` 命令，支持按 message/author/hash 搜索整个仓库历史
+- **标签增强**：标签自动递增、远程标签显示、Push to remote 默认选项
+- **上下文菜单增强**：Edit Message、Reset Last Commit (Soft)、Create Branch、Pull Branch 等
+- **多行输入**：提交/stash/tag 消息输入改为 textarea，正确保留多行换行
 
 ## 功能特性
 

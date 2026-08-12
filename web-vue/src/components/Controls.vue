@@ -12,6 +12,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import * as GG from 'backend-types';
 import { useGitGraphStore } from '@/stores/gitGraph';
 import { SVG_ICONS } from '@/lib/constants';
+import { getRepoName } from '@/lib/utils';
 
 const store = useGitGraphStore();
 
@@ -87,8 +88,12 @@ function onFind() {
 
 /** terminal 按钮 */
 function onTerminal() {
-  /* 由后端处理 */
-  store.runAction({ command: 'openTerminal', repo: store.currentRepo } as never, '');
+  const repoName = store.gitRepos[store.currentRepo]?.name || getRepoName(store.currentRepo);
+  store.runAction({
+    command: 'openTerminal',
+    repo: store.currentRepo,
+    name: repoName,
+  } as GG.RequestMessage, '');
 }
 
 /** settings 按钮 */

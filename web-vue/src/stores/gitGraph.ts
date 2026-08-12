@@ -55,6 +55,7 @@ import {
   escapeHtml,
   unescapeHtml,
   formatCommaSeparatedList,
+  SVG_ICONS,
   findCommitElemWithId,
   getCommitElems,
   handledEvent,
@@ -972,6 +973,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     sendMessage({
       command: 'fetch',
       repo: currentRepo.value,
+      name: null,
       prune: config.value.fetchAndPrune,
       pruneTags: config.value.fetchAndPruneTags,
     } as GG.RequestMessage);
@@ -1833,62 +1835,250 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       case 'refresh':
         refresh(false);
         break;
-      case 'fetch':
-        if (msg.error === null) refresh(false);
-        else dialog.value?.showError(t('fetchingFromRemotes'), msg.error, null, null);
+      case 'openTerminal':
+        finishOrDisplayError(msg.error, 'Unable to Open Terminal', true);
         break;
-      case 'addTag':
-      case 'checkoutBranch':
-      case 'createBranch':
-      case 'deleteBranch':
-      case 'deleteTag':
-      case 'merge':
-      case 'rebase':
-      case 'pushBranch':
-      case 'pushTag':
-      case 'pullBranch':
-      case 'resetToCommit':
-      case 'revertCommit':
-      case 'cherrypickCommit':
-      case 'dropCommit':
-      case 'dropStash':
-      case 'applyStash':
-      case 'popStash':
-      case 'pushStash':
-      case 'renameBranch':
-      case 'undoLastCommit':
-      case 'editCommitMessage':
-      case 'checkoutCommit':
-      case 'cleanUntrackedFiles':
-      case 'branchFromStash':
-      case 'fetchIntoLocalBranch':
-      case 'deleteRemoteBranch':
-      case 'pruneRemote':
-      case 'addRemote':
-      case 'deleteRemote':
-      case 'editRemote':
-      case 'exportRepoConfig':
-        /* 这些命令的成功/失败处理：成功则刷新，失败则显示错误 */
-        {
-          const errors = (msg as { errors?: GG.ErrorInfo[] }).errors;
-          const error = (msg as { error?: GG.ErrorInfo }).error;
-          if (errors) {
-            const reduced = reduceErrorInfos(errors);
-            if (reduced.error)
-              dialog.value?.showError('Git operation failed', reduced.error, null, null);
-            if (reduced.partialOrCompleteSuccess) refresh(false);
-          } else if (error) {
-            dialog.value?.showError('Git operation failed', error, null, null);
-          } else {
-            refresh(false);
-          }
+      case 'fetch':
+        refreshOrDisplayError(msg.error, t('fetchingFromRemotes'));
+        break;
+      case 'addTag': {
+        const addTagMsg = msg as GG.ResponseAddTag;
+        if (
+          addTagMsg.pushToRemote !== null &&
+          addTagMsg.errors.length === 2 &&
+          addTagMsg.errors[0] === null &&
+          isExtensionErrorInfo(addTagMsg.errors[1], GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote)
+        ) {
+          refresh(false);
+          handleResponsePushTagCommitNotOnRemote(
+            addTagMsg.repo,
+            addTagMsg.tagName,
+            [addTagMsg.pushToRemote],
+            addTagMsg.commitHash,
+            addTagMsg.errors[1]!,
+          );
+        } else {
+          refreshAndDisplayErrors(addTagMsg.errors, 'Unable to Add Tag');
         }
         break;
+      }
+      case 'pushTag': {
+        const pushTagMsg = msg as GG.ResponsePushTag;
+        if (
+          pushTagMsg.errors.length === 1 &&
+          isExtensionErrorInfo(pushTagMsg.errors[0], GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote)
+        ) {
+          handleResponsePushTagCommitNotOnRemote(
+            pushTagMsg.repo,
+            pushTagMsg.tagName,
+            pushTagMsg.remotes,
+            pushTagMsg.commitHash,
+            pushTagMsg.errors[0]!,
+          );
+        } else {
+          refreshAndDisplayErrors(pushTagMsg.errors, 'Unable to Push Tag');
+        }
+        break;
+      }
+      case 'deleteBranch': {
+        const deleteBranchMsg = msg as GG.ResponseDeleteBranch;
+        if (
+          deleteBranchMsg.errors.length > 0 &&
+          deleteBranchMsg.errors[0] !== null &&
+          deleteBranchMsg.errors[0].includes('git branch -D')
+        ) {
+          dialog.value?.showConfirmation(
+            'The branch <b><i>' +
+              escapeHtml(deleteBranchMsg.branchName) +
+              '</i></b> is not fully merged. Would you like to force delete it?',
+            'Yes, force delete branch',
+            () => {
+              runAction(
+                {
+                  command: 'deleteBranch',
+                  repo: deleteBranchMsg.repo,
+                  branchName: deleteBranchMsg.branchName,
+                  forceDelete: true,
+                  deleteOnRemotes: deleteBranchMsg.deleteOnRemotes,
+                },
+                t('deletingBranch'),
+              );
+            },
+            { type: TargetType.Repo },
+          );
+        } else {
+          refreshAndDisplayErrors(deleteBranchMsg.errors, 'Unable to Delete Branch');
+        }
+        break;
+      }
+      case 'rebase': {
+        const rebaseMsg = msg as GG.ResponseRebase;
+        if (rebaseMsg.error === null) {
+          if (rebaseMsg.interactive) dialog.value?.closeActionRunning();
+          else refresh(false);
+        } else {
+          dialog.value?.showError(
+            'Unable to Rebase current branch on ' + rebaseMsg.actionOn,
+            rebaseMsg.error,
+            null,
+            null,
+          );
+        }
+        break;
+      }
+      case 'merge': {
+        const mergeMsg = msg as GG.ResponseMerge;
+        refreshOrDisplayError(mergeMsg.error, 'Unable to Merge ' + mergeMsg.actionOn);
+        break;
+      }
+      case 'checkoutBranch': {
+        const coMsg = msg as GG.ResponseCheckoutBranch;
+        refreshAndDisplayErrors(
+          coMsg.errors,
+          'Unable to Checkout Branch' + (coMsg.pullAfterwards !== null ? ' & Pull Changes' : ''),
+        );
+        break;
+      }
+      case 'pushBranch': {
+        const pushMsg = msg as GG.ResponsePushBranch;
+        refreshAndDisplayErrors(pushMsg.errors, 'Unable to Push Branch', pushMsg.willUpdateBranchConfig);
+        break;
+      }
+      case 'createPullRequest': {
+        const prMsg = msg as GG.ResponseCreatePullRequest;
+        finishOrDisplayErrors(prMsg.errors, 'Unable to Create Pull Request', () => {
+          if (prMsg.push) refresh(false);
+        }, true);
+        break;
+      }
+      case 'createBranch':
+        refreshAndDisplayErrors((msg as GG.ResponseCreateBranch).errors, 'Unable to Create Branch');
+        break;
+      case 'cherrypickCommit':
+        refreshAndDisplayErrors((msg as GG.ResponseCherrypickCommit).errors, 'Unable to Cherry Pick Commit');
+        break;
+      case 'applyStash':
+        refreshOrDisplayError(msg.error, 'Unable to Apply Stash');
+        break;
+      case 'branchFromStash':
+        refreshOrDisplayError(msg.error, 'Unable to Create Branch from Stash');
+        break;
+      case 'checkoutCommit':
+        refreshOrDisplayError(msg.error, 'Unable to Checkout Commit');
+        break;
+      case 'cleanUntrackedFiles':
+        refreshOrDisplayError(msg.error, 'Unable to Clean Untracked Files');
+        break;
+      case 'deleteTag':
+        refreshOrDisplayError(msg.error, 'Unable to Delete Tag');
+        break;
+      case 'dropCommit':
+        refreshOrDisplayError(msg.error, 'Unable to Drop Commit');
+        break;
+      case 'dropStash':
+        refreshOrDisplayError(msg.error, 'Unable to Drop Stash');
+        break;
+      case 'exportRepoConfig':
+        refreshOrDisplayError(msg.error, 'Unable to Export Repository Configuration');
+        break;
+      case 'fetchIntoLocalBranch':
+        refreshOrDisplayError(msg.error, 'Unable to Fetch into Local Branch');
+        break;
+      case 'popStash':
+        refreshOrDisplayError(msg.error, 'Unable to Pop Stash');
+        break;
+      case 'pruneRemote':
+        refreshOrDisplayError(msg.error, 'Unable to Prune Remote');
+        break;
+      case 'pullBranch':
+        refreshOrDisplayError(msg.error, 'Unable to Pull Branch');
+        break;
+      case 'pushStash':
+        refreshOrDisplayError(msg.error, 'Unable to Stash Uncommitted Changes');
+        break;
+      case 'renameBranch':
+        refreshOrDisplayError(msg.error, 'Unable to Rename Branch');
+        break;
+      case 'resetToCommit':
+        refreshOrDisplayError(msg.error, 'Unable to Reset to Commit');
+        break;
+      case 'undoLastCommit':
+        refreshOrDisplayError(msg.error, 'Unable to Reset Last Commit');
+        break;
+      case 'revertCommit':
+        refreshOrDisplayError(msg.error, 'Unable to Revert Commit');
+        break;
+      case 'editCommitMessage':
+        refreshOrDisplayError(msg.error, 'Unable to Edit Commit Message');
+        break;
+      case 'deleteRemoteBranch':
+        refreshOrDisplayError(msg.error, 'Unable to Delete Remote Branch');
+        break;
+      case 'addRemote':
+        refreshOrDisplayError(msg.error, 'Unable to Add Remote', true);
+        break;
+      case 'deleteRemote':
+        refreshOrDisplayError(msg.error, 'Unable to Delete Remote', true);
+        break;
+      case 'editRemote':
+        refreshOrDisplayError(msg.error, 'Unable to Save Changes to Remote', true);
+        break;
+      case 'resetFileToRevision':
+        refreshOrDisplayError(msg.error, 'Unable to Reset File to Revision');
+        break;
+      case 'openFile':
+        finishOrDisplayError(msg.error, 'Unable to Open File');
+        break;
+      case 'viewDiff':
+        finishOrDisplayError(msg.error, 'Unable to View Diff');
+        break;
+      case 'viewDiffWithWorkingFile':
+        finishOrDisplayError(msg.error, 'Unable to View Diff with Working File');
+        break;
+      case 'viewFileAtRevision':
+        finishOrDisplayError(msg.error, 'Unable to View File at Revision');
+        break;
+      case 'viewScm':
+        finishOrDisplayError(msg.error, 'Unable to open the Source Control View');
+        break;
+      case 'openExternalUrl':
+        finishOrDisplayError(msg.error, 'Unable to Open External URL');
+        break;
+      case 'openExtensionSettings':
+        finishOrDisplayError(msg.error, 'Unable to Open Extension Settings');
+        break;
+      case 'openExternalDirDiff':
+        finishOrDisplayError(msg.error, 'Unable to Open External Directory Diff', true);
+        break;
+      case 'copyToClipboard':
+        finishOrDisplayError(msg.error, 'Unable to Copy ' + (msg as GG.ResponseCopyToClipboard).type + ' to Clipboard');
+        break;
+      case 'copyFilePath':
+        finishOrDisplayError(msg.error, 'Unable to Copy File Path to Clipboard');
+        break;
+      case 'createArchive':
+        finishOrDisplayError(msg.error, 'Unable to Create Archive', true);
+        break;
+      case 'deleteUserDetails':
+        finishOrDisplayErrors((msg as GG.ResponseDeleteUserDetails).errors, 'Unable to Remove Git User Details', () => requestLoadConfig(), true);
+        break;
+      case 'editUserDetails':
+        finishOrDisplayErrors((msg as GG.ResponseEditUserDetails).errors, 'Unable to Save Git User Details', () => requestLoadConfig(), true);
+        break;
+      case 'setGlobalViewState':
+        finishOrDisplayError(msg.error, 'Unable to save the Global View State');
+        break;
+      case 'setWorkspaceViewState':
+        finishOrDisplayError(msg.error, 'Unable to save the Workspace View State');
+        break;
       default:
-        /* 其他命令（openFile, viewDiff, copyToClipboard 等）不需要 store 处理 */
         break;
     }
   }
+
+  /* ================================================================
+   * Response 辅助函数（对齐原项目 main.ts）
+   * ================================================================ */
 
   function reduceErrorInfos(errors: GG.ErrorInfo[]) {
     let error: GG.ErrorInfo = null;
@@ -1898,6 +2088,119 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       else partialOrCompleteSuccess = true;
     }
     return { error, partialOrCompleteSuccess };
+  }
+
+  function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string, configChanges: boolean = false) {
+    if (error === null) {
+      refresh(false, configChanges);
+    } else {
+      dialog.value?.showError(errorMessage, error, null, null);
+    }
+  }
+
+  function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string, configChanges: boolean = false) {
+    const reduced = reduceErrorInfos(errors);
+    if (reduced.error !== null) {
+      dialog.value?.showError(errorMessage, reduced.error, null, null);
+    }
+    if (reduced.partialOrCompleteSuccess) {
+      refresh(false, configChanges);
+    } else if (configChanges) {
+      requestLoadConfig();
+    }
+  }
+
+  function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string, dismissActionRunning: boolean = false) {
+    if (error !== null) {
+      dialog.value?.showError(errorMessage, error, null, null);
+    } else if (dismissActionRunning) {
+      dialog.value?.closeActionRunning();
+    }
+  }
+
+  function finishOrDisplayErrors(
+    errors: GG.ErrorInfo[],
+    errorMessage: string,
+    partialOrCompleteSuccessCallback: () => void,
+    dismissActionRunning: boolean = false,
+  ) {
+    const reduced = reduceErrorInfos(errors);
+    finishOrDisplayError(reduced.error, errorMessage, dismissActionRunning);
+    if (reduced.partialOrCompleteSuccess) {
+      partialOrCompleteSuccessCallback();
+    }
+  }
+
+  function isExtensionErrorInfo(error: GG.ErrorInfo, prefix: GG.ErrorInfoExtensionPrefix) {
+    return error !== null && error.startsWith(prefix);
+  }
+
+  function parseExtensionErrorInfo(error: string, prefix: GG.ErrorInfoExtensionPrefix) {
+    return JSON.parse(error.substring(prefix.length));
+  }
+
+  function handleResponsePushTagCommitNotOnRemote(
+    repo: string,
+    tagName: string,
+    remotes: string[],
+    commitHash: string,
+    error: string,
+  ) {
+    const remotesNotContainingCommit: string[] = parseExtensionErrorInfo(
+      error,
+      GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote,
+    );
+
+    const html =
+      '<span class="dialogAlert">' +
+      SVG_ICONS.alert +
+      'Warning: Commit is not on Remote' +
+      (remotesNotContainingCommit.length > 1 ? 's ' : ' ') +
+      '</span><br>' +
+      '<span class="messageContent">' +
+      '<p style="margin:0 0 6px 0;">The tag <b><i>' +
+      escapeHtml(tagName) +
+      '</i></b> is on a commit that isn\'t on any known branch on the remote' +
+      (remotesNotContainingCommit.length > 1 ? 's' : '') +
+      ' ' +
+      formatCommaSeparatedList(
+        remotesNotContainingCommit.map((remote) => '<b><i>' + escapeHtml(remote) + '</i></b>'),
+      ) +
+      '.</p>' +
+      '<p style="margin:0;">Would you like to proceed to push the tag to the remote' +
+      (remotes.length > 1 ? 's' : '') +
+      ' ' +
+      formatCommaSeparatedList(
+        remotes.map((remote) => '<b><i>' + escapeHtml(remote) + '</i></b>'),
+      ) +
+      ' anyway?</p>' +
+      '</span>';
+
+    dialog.value?.showForm(
+      html,
+      [{ type: DialogInputType.Checkbox, name: 'Always Proceed', value: false }],
+      'Proceed to Push',
+      (values) => {
+        if (values[0] as boolean) {
+          updateGlobalViewState('pushTagSkipRemoteCheck', true);
+        }
+        runAction(
+          {
+            command: 'pushTag',
+            repo: repo,
+            tagName: tagName,
+            remotes: remotes,
+            commitHash: commitHash,
+            skipRemoteCheck: true,
+          } as GG.RequestMessage,
+          t('pushingTag'),
+        );
+      },
+      { type: TargetType.Repo },
+      'Cancel',
+      null,
+      true,
+    );
   }
 
   /* ================================================================
