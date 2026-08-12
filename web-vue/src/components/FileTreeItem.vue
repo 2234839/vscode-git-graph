@@ -246,3 +246,96 @@ function fileDiffTooltip(file: GG.GitFileChange): string {
     </li>
   </template>
 </template>
+
+<!-- fileTree* class 同时被 CommitDetails 的 List 模式使用，必须全局 -->
+<style>
+.fileTreeFileIcon, .fileTreeFolderIcon, .fileTreeRepoIcon, .fileTreeFileAction, #cdvLastFileViewed {
+	position: relative;
+	display: inline-block;
+	width: 13px;
+	height: 18px;
+	vertical-align: top;
+}
+.fileTreeFileIcon, .fileTreeFolderIcon, .fileTreeRepoIcon {
+	margin-right: 8px;
+}
+#cdvLastFileViewed {
+	margin-left: 8px;
+	cursor: help;
+}
+.fileTreeFileAction {
+	margin-left: 8px;
+	opacity: 0;
+}
+.fileTreeFileAction.viewGitFileAtRevision, .fileTreeFileAction.openGitFile {
+	margin-left: 6px;
+}
+.fileTreeFileRecord:hover .fileTreeFileAction,
+.fileTreeFileRecord.contextMenuActive .fileTreeFileAction,
+.fileTreeFileRecord.dialogActive .fileTreeFileAction {
+	cursor: pointer;
+	opacity: 1;
+}
+/* IconSvg 渲染的 svg */
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon, .fileTreeFileAction svg, #cdvLastFileViewed svg {
+	position: absolute;
+	top: 2.5px;
+	height: 13px !important;
+	fill: var(--vscode-editor-foreground);
+	fill-opacity: 0.6;
+}
+.fileTreeFileAction.copyGitFile svg {
+	top: 3px;
+}
+.fileTreeFileAction.viewGitFileAtRevision svg, .fileTreeFileAction.openGitFile svg {
+	top: 4px;
+}
+.fileTreeFolder:hover svg.openFolderIcon, .fileTreeFolder:hover svg.closedFolderIcon,
+.fileTreeFileRecord:hover svg.fileIcon, .fileTreeFileRecord.contextMenuActive svg.fileIcon,
+.fileTreeFileRecord.dialogActive svg.fileIcon,
+.fileTreeFileRecord:hover #cdvLastFileViewed svg, .fileTreeFileRecord.contextMenuActive #cdvLastFileViewed svg,
+.fileTreeFileRecord.dialogActive #cdvLastFileViewed svg,
+.fileTreeRepo:hover svg, .fileTreeFileAction:hover svg {
+	fill-opacity: 0.8;
+}
+svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon {
+	width: 13px;
+}
+.fileTreeFolderContents.hidden {
+	display: none;
+}
+.fileTreeFolder, .fileTreeRepo {
+	cursor: pointer;
+}
+.fileTreeFile .gitFileName {
+	color: var(--vscode-gitDecoration-modifiedResourceForeground);
+}
+.fileTreeFile .gitFileName.A, .fileTreeFile .gitFileName.U {
+	color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+.fileTreeFile .gitFileName.D {
+	color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+.fileTreeFile.gitDiffPossible {
+	cursor: pointer;
+}
+.fileTreeFileAddDel, .fileTreeFileType {
+	margin-left: 8px;
+}
+.fileTreeFileType {
+	cursor: help;
+}
+.fileTreeFileAdd, .fileTreeFileDel {
+	padding: 0 3px;
+	cursor: help;
+}
+.fileTreeFileAdd {
+	color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+.fileTreeFileDel {
+	color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+.fileTreeFolder.pendingReview .gitFolderName, .fileTreeFile.pendingReview .gitFileName {
+	font-weight: 700;
+}
+</style>

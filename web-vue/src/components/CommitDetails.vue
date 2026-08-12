@@ -476,5 +476,267 @@ function onFileContextMenu(event: MouseEvent, item: FlatFileItem) {
 </template>
 
 <style scoped>
-/* CDV 样式由全局 main.css 控制 */
+/* cdvContent 是 position:absolute; right:32px，给按钮栏预留空间。
+   cdvControls 在 cdvContent 内部，需要 right:-32px 抵消父级偏移，对齐到容器最右 */
+#cdvContent {
+	position: absolute;
+	left: 0;
+	right: 32px;
+}
+
+#cdvControls {
+	position: absolute;
+	right: -32px;
+	width: 32px;
+}
+
+.cdvControlBtn {
+	position: relative;
+	margin: 4px;
+	width: 24px;
+	height: 24px;
+	cursor: pointer;
+}
+.cdvControlBtn.active {
+	background-color: rgba(128, 128, 128, 0.25);
+}
+.cdvControlBtn.active:hover {
+	background-color: rgba(128, 128, 128, 0.35);
+}
+.cdvFolderBtn.hidden {
+	display: none;
+}
+
+#cdvCodeReview {
+	border-radius: 4px;
+}
+
+#cdvFileViewTypeTree {
+	border-radius: 4px 4px 0 0;
+	margin-bottom: 0;
+}
+#cdvFileViewTypeList {
+	border-radius: 0 0 4px 4px;
+	margin-top: 0;
+}
+.cdvFileViewTypeBtn {
+	background-color: rgba(128, 128, 128, 0.125);
+}
+
+#cdvExternalDiff {
+	display: none;
+}
+#cdvExternalDiff.enabled {
+	display: block;
+}
+
+/* IconSvg 是子组件，需要 :deep() */
+.cdvControlBtn :deep(svg) {
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	left: 2px;
+	top: 2px;
+	fill: var(--vscode-editor-foreground);
+	fill-opacity: 0.6;
+}
+.cdvControlBtn:hover :deep(svg),
+.cdvControlBtn.active :deep(svg) {
+	fill-opacity: 0.75;
+}
+.cdvControlBtn.active:hover :deep(svg) {
+	fill-opacity: 0.9;
+}
+
+/* Summary / Files / Loading 区域 */
+#cdvSummary, #cdvFiles, #cdvLoading {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	box-sizing: border-box;
+	border-right: 1px solid rgba(128, 128, 128, 0.2);
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+#cdvDivider {
+	position: absolute;
+	left: 50%;
+	width: 6px;
+	cursor: col-resize;
+}
+#cdvSummary {
+	left: 0;
+	width: 50%;
+	padding: 10px;
+	text-overflow: ellipsis;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.cdvSummaryTop {
+	display: inline-table;
+	width: 100%;
+}
+.cdvSummaryTopRow {
+	display: table-row;
+}
+.cdvSummaryKeyValues, .cdvSummaryAvatar {
+	display: table-cell;
+	vertical-align: top;
+}
+.cdvSummaryKeyValues {
+	max-width: 0px;
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+}
+.cdvSummaryTop.withAvatar .cdvSummaryKeyValues {
+	padding-right: 10px;
+}
+.cdvSummaryAvatar {
+	width: 54px;
+}
+.cdvSummaryAvatar > img {
+	width: 54px;
+	border-radius: 4px;
+}
+
+.signatureInfo {
+	cursor: help;
+	margin-left: 4px;
+	vertical-align: middle;
+	line-height: 13px;
+}
+.signatureInfo :deep(svg) {
+	vertical-align: 0 !important;
+}
+.signatureInfo.G :deep(svg), .signatureInfo.X :deep(svg) {
+	fill: #009028;
+	opacity: 0.9;
+}
+.signatureInfo.U :deep(svg), .signatureInfo.Y :deep(svg),
+.signatureInfo.R :deep(svg), .signatureInfo.E :deep(svg) {
+	fill: #f09000;
+	opacity: 1;
+}
+.signatureInfo.B :deep(svg) {
+	fill: #e00000;
+	opacity: 0.8;
+}
+
+#cdvFiles {
+	left: 50%;
+	right: 0;
+	padding: 4px 8px 8px 0;
+	-webkit-user-select: none;
+	user-select: none;
+}
+#cdvFiles ul {
+	list-style-type: none;
+	-webkit-margin-before: 0;
+	-webkit-margin-after: 0;
+	-webkit-margin-start: 0px;
+	-webkit-margin-end: 0px;
+	-webkit-padding-start: 25px;
+	margin: 0;
+	padding: 0 0 0 25px;
+}
+#cdvFiles > ul {
+	-webkit-padding-start: 10px;
+	padding: 0 0 0 10px;
+}
+#cdvFiles li {
+	margin-top: 4px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow-x: hidden;
+}
+
+#cdvLoading {
+	left: 0;
+	right: 0;
+	padding: 10px;
+	-webkit-user-select: none;
+	user-select: none;
+	text-align: center;
+	line-height: 24px;
+	text-overflow: ellipsis;
+}
+#cdvLoading :deep(svg) {
+	display: inline-block;
+	width: 15px !important;
+	height: 20px !important;
+	margin-top: 2px;
+	margin-right: 8px;
+	vertical-align: top;
+	fill: var(--vscode-editor-foreground);
+	animation: loadingIconAnimation 2s linear infinite;
+}
+
+.cdvHeightResize {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 6px;
+	cursor: row-resize;
+}
+</style>
+
+/* #cdv 容器由父组件 (App.vue docked / CommitTable.vue inline) 渲染，
+   这些选择器涉及跨组件 DOM 层级，必须全局 */
+<style>
+#cdv.inline {
+	vertical-align: top;
+}
+#cdv.inline td {
+	background-color: rgba(128, 128, 128, 0.1);
+	position: relative;
+	font-size: 13px;
+	line-height: 18px;
+	white-space: normal;
+}
+#cdv.docked {
+	display: block;
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(128, 128, 128, 0.1);
+	font-size: 13px;
+	line-height: 18px;
+	white-space: normal;
+	cursor: default;
+}
+
+/* inline 模式下 cdvContent / cdvControls 的定位调整 */
+#cdv.inline #cdvContent,
+#cdv.inline #cdvControls {
+	top: 0;
+	bottom: 2px;
+}
+#cdv.inline #cdvContent {
+	border-left: 1px solid rgba(128, 128, 128, 0.2);
+}
+#cdv.inline #cdvDivider {
+	top: 0;
+	bottom: 6px;
+}
+#cdv.inline .cdvHeightResize {
+	bottom: 0;
+	border-bottom: 2px solid rgba(128, 128, 128, 0.2);
+}
+
+/* docked 模式 */
+#cdv.docked #cdvContent,
+#cdv.docked #cdvControls {
+	top: 2px;
+	bottom: 0;
+}
+#cdv.docked #cdvDivider {
+	top: 6px;
+	bottom: 0;
+}
+#cdv.docked .cdvHeightResize {
+	top: 0;
+	border-top: 2px solid rgba(128, 128, 128, 0.2);
+}
 </style>

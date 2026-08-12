@@ -1,7 +1,7 @@
 {
 	"name": "git-graph-guseng",
 	"displayName": "Git Graph (Guseng Enhanced)",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"publisher": "llej",
 	"engine": {
 		"node": "18.17.1"
@@ -20,15 +20,15 @@
 	"categories": [
 		"Other"
 	],
-	"homepage": "https://github.com/git-hub-tig/vscode-git-graph",
+	"homepage": "https://github.com/2234839/vscode-git-graph",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/git-hub-tig/vscode-git-graph.git"
+		"url": "https://github.com/2234839/vscode-git-graph.git"
 	},
 	"bugs": {
-		"url": "https://github.com/git-hub-tig/vscode-git-graph/issues"
+		"url": "https://github.com/2234839/vscode-git-graph/issues"
 	},
-	"qna": "https://github.com/git-hub-tig/vscode-git-graph/wiki/Support-Resources",
+	"qna": "https://github.com/2234839/vscode-git-graph/wiki/Support-Resources",
 	"license": "SEE LICENSE IN LICENSE",
 	"icon": "resources/icon.png",
 	"engines": {
@@ -432,7 +432,7 @@
 							}
 						}
 					},
-					"markdownDescription": "自定义右键菜单操作的可见性。例如，如果要隐藏分支右键菜单中的变基操作，此设置的合适值为 `{ \"branch\": { \"rebase\": false } }`。有关如何配置此设置的更多信息，请查看文档[此处](https://github.com/git-hub-tig/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility)。"
+					"markdownDescription": "自定义右键菜单操作的可见性。例如，如果要隐藏分支右键菜单中的变基操作，此设置的合适值为 `{ \"branch\": { \"rebase\": false } }`。有关如何配置此设置的更多信息，请查看文档[此处](https://github.com/2234839/vscode-git-graph/wiki/Extension-Settings#context-menu-actions-visibility)。"
 				},
 				"git-graph.customBranchGlobPatterns": {
 					"type": "array",
@@ -502,12 +502,12 @@
 							"templateUrl": {
 								"type": "string",
 								"title": "模板 URL",
-								"markdownDescription": "一个模板 URL，在替换 $1 - $8 变量构造最终 URL 后，可用于创建 Pull Request。有关如何配置此设置的信息，请查看文档[此处](https://github.com/git-hub-tig/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)。"
+								"markdownDescription": "一个模板 URL，在替换 $1 - $8 变量构造最终 URL 后，可用于创建 Pull Request。有关如何配置此设置的信息，请查看文档[此处](https://github.com/2234839/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)。"
 							}
 						}
 					},
 					"default": [],
-					"markdownDescription": "可用于“Pull Request 创建”集成的自定义 Pull Request 提供商数组。有关如何配置此设置的信息，请查看文档[此处](https://github.com/git-hub-tig/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)。"
+					"markdownDescription": "可用于“Pull Request 创建”集成的自定义 Pull Request 提供商数组。有关如何配置此设置的信息，请查看文档[此处](https://github.com/2234839/vscode-git-graph/wiki/Configuring-a-custom-Pull-Request-Provider)。"
 				},
 				"git-graph.date.format": {
 					"type": "string",

@@ -150,5 +150,124 @@ function onFetch() {
 </template>
 
 <style scoped>
-/* 控制栏样式由全局 main.css 控制 */
+#controls {
+	display: block;
+	position: relative;
+	left: 0;
+	right: 0;
+	top: 0;
+	padding: 4px 132px 4px 0;
+	background-color: var(--vscode-editor-background);
+	border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+	line-height: 32px;
+	text-align: center;
+	font-weight: 700;
+	font-size: 13px;
+	-webkit-user-select: none;
+	user-select: none;
+}
+#controls.sticky {
+	position: sticky;
+	z-index: 12;
+}
+
+#repoControl, #branchControl, #showRemoteBranchesControl {
+	display: inline-block;
+	white-space: nowrap;
+	margin: 0 10px;
+}
+#repoDropdown, #branchDropdown, #authorDropdown {
+	margin-left: 3px;
+}
+#showRemoteBranchesControl > .customCheckbox {
+	margin-right: 6px;
+}
+
+/* dropdownCurrentValue 由 Dropdown 类动态写入 div，需要 :deep() */
+:deep(.dropdownCurrentValue) {
+	max-width: 30vw;
+}
+#controls.singleRepo #repoControl {
+	display: none;
+}
+#controls.singleRepo :deep(.dropdownCurrentValue) {
+	max-width: 40vw;
+}
+
+#currentBtn, #findBtn, #terminalBtn, #settingsBtn, #fetchBtn, #refreshBtn {
+	position: absolute;
+	top: 50%;
+	width: 20px;
+	height: 20px;
+	margin-top: -10px;
+	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
+}
+#currentBtn { right: 130px; }
+#findBtn { right: 100px; }
+#terminalBtn { right: 70px; }
+#settingsBtn { right: 40px; }
+#fetchBtn { display: none; right: 40px; }
+#refreshBtn { right: 10px; }
+#refreshBtn.refreshing { cursor: default; }
+
+/* v-html 的 SVG 需要 :deep() */
+#currentBtn :deep(svg), #findBtn :deep(svg), #terminalBtn :deep(svg),
+#settingsBtn :deep(svg), #fetchBtn :deep(svg), #refreshBtn :deep(svg) {
+	position: absolute;
+	fill: var(--vscode-editor-foreground);
+	opacity: 0.8;
+	stroke: var(--vscode-editor-foreground);
+	stroke-opacity: 0.5;
+	stroke-width: 0;
+}
+#currentBtn :deep(svg), #findBtn :deep(svg), #terminalBtn :deep(svg) {
+	stroke-width: 0.5px;
+}
+#currentBtn:hover :deep(svg), #findBtn:hover :deep(svg), #terminalBtn:hover :deep(svg),
+#settingsBtn:hover :deep(svg), #fetchBtn:hover :deep(svg), #refreshBtn:hover :deep(svg) {
+	opacity: 1;
+	stroke-width: 0.5px;
+}
+#currentBtn:hover :deep(svg), #findBtn:hover :deep(svg), #terminalBtn:hover :deep(svg) {
+	stroke-width: 1px;
+}
+#currentBtn :deep(svg), #findBtn :deep(svg), #terminalBtn :deep(svg), #settingsBtn :deep(svg), #fetchBtn :deep(svg) {
+	left: 1px;
+	top: 1px;
+	width: 18px !important;
+	height: 18px !important;
+}
+#refreshBtn :deep(svg) {
+	left: 2px;
+	top: 2px;
+	width: 16px !important;
+	height: 16px !important;
+}
+#refreshBtn.refreshing :deep(svg) {
+	left: 3.25px;
+	top: 2px;
+	width: 13.5px !important;
+	height: 18px !important;
+	animation: loadingIconAnimation 2s linear infinite;
+}
+
+#controls.fetchSupported {
+	padding-right: 162px;
+}
+#controls.fetchSupported #currentBtn { right: 160px; }
+#controls.fetchSupported #findBtn { right: 130px; }
+#controls.fetchSupported #terminalBtn { right: 100px; }
+#controls.fetchSupported #settingsBtn { right: 70px; }
+#controls.fetchSupported #fetchBtn { display: block; }
+
+#controls input:focus {
+	outline: none;
+}
+#controls label {
+	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
+}
 </style>

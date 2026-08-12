@@ -8,14 +8,6 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
 
-/* 全局样式（顺序重要：main.css 先加载，组件样式覆盖） */
-import './styles/main.css';
-import './styles/contextMenu.css';
-import './styles/dialog.css';
-import './styles/dropdown.css';
-import './styles/findWidget.css';
-import './styles/settingsWidget.css';
-
 const app = createApp(App);
 app.use(createPinia());
 
