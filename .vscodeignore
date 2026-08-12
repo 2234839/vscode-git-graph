@@ -9,6 +9,8 @@ coverage/
 node_modules/**
 !node_modules/iconv-lite/**
 !node_modules/iconv-lite
+!node_modules/safer-buffer/**
+!node_modules/safer-buffer
 
 out/**/*.d.ts
 out/**/*.js.map
