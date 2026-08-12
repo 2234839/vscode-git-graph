@@ -202,6 +202,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
   /** 表头列容器元素引用 */
   let tableColHeadersElem: HTMLElement | null = null;
 
+  /* ---- 表格布局 class（响应式，驱动 CommitTable.vue :class 绑定） ---- */
+  /** 表格布局 class：'autoLayout' | 'fixedLayout' | 'autoLayout limitGraphWidth' */
+  const tableLayoutClass = ref('autoLayout');
+
   /* ---- 列宽拖拽状态（makeTableResizable / startColumnResize / processResizingColumn / stopResizingColumn 共享） ---- */
   /** 当前各列宽度配置（COLUMN_AUTO / COLUMN_HIDDEN 或像素值） */
   let columnWidths: GG.ColumnWidth[] = [];
@@ -4067,7 +4071,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     for (let i = 2; i < cols.length; i++) {
       cols[i].style.width = columnWidths[parseInt(cols[i].dataset.col!)] + 'px';
     }
-    tableElem.className = 'fixedLayout';
+    tableLayoutClass.value = 'fixedLayout';
     tableElem.style.removeProperty(CSS_PROP_LIMIT_GRAPH_WIDTH);
     graph.value?.limitMaxWidth(columnWidths[0] + COLUMN_LEFT_RIGHT_PADDING);
   }
@@ -4111,7 +4115,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       makeTableFixedLayout();
     } else {
       /** 表格使用自动布局 */
-      tableElem.className = 'autoLayout';
+      tableLayoutClass.value = 'autoLayout';
 
       let colWidth = cols[0].offsetWidth;
       let graphWidth = graph.value?.getContentWidth() ?? 0;
@@ -4119,7 +4123,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       if (Math.max(graphWidth, colWidth) > maxWidth) {
         graph.value?.limitMaxWidth(maxWidth);
         graphWidth = maxWidth;
-        tableElem.className += ' limitGraphWidth';
+        tableLayoutClass.value = 'autoLayout limitGraphWidth';
         tableElem.style.setProperty(CSS_PROP_LIMIT_GRAPH_WIDTH, maxWidth + 'px');
       } else {
         graph.value?.limitMaxWidth(-1);
@@ -4625,6 +4629,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     isRefreshing,
     commitRows,
     pendingScrollTo,
+    tableLayoutClass,
     // Methods
     t,
     getCommitId,

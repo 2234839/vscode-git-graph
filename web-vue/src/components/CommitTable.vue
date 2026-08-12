@@ -24,8 +24,8 @@ const tagLabelsOnRight = computed(() => store.config.referenceLabels.tagLabelsOn
 /** commit 表格容器引用（用于滚动） */
 const tableElem = ref<HTMLElement | null>(null);
 
-/** 表格布局 class（由 makeTableResizable 设置） */
-const tableLayoutClass = ref('autoLayout');
+/** 表格布局 class（由 store.makeTableResizable 响应式驱动） */
+const tableLayoutClass = computed(() => store.tableLayoutClass);
 
 /** 滚动处理 */
 function onScroll() {

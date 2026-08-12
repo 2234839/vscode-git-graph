@@ -5,36 +5,36 @@
 Task.md
 coverage/
 
-# 排除整个 node_modules，然后只加回运行时依赖
-node_modules/**
-!node_modules/iconv-lite/**
-!node_modules/iconv-lite
-!node_modules/safer-buffer/**
-!node_modules/safer-buffer
+# tsdown bundle 后不需要 node_modules
+node_modules/
 
-out/**/*.d.ts
-out/**/*.js.map
-out/*.d.ts
-out/*.js.map
-
-resources/demo.gif
-resources/icon.*.png
-resources/icon.old.png
-resources/icon.bad.png
-
+# 排除源码、测试、构建配置
 src/
 tests/
 web/
 web-vue/
 
+# 编译产物中不需要的文件
+out/**/*.d.ts
+out/**/*.js.map
+out/*.d.ts
+out/*.js.map
+
+# 不需要的资源文件
+resources/demo.gif
+resources/icon.*.png
+resources/icon.old.png
+resources/icon.bad.png
+
+# 开发配置
 .eslintrc.json
 .gitignore
 .nvmrc
 jest.config.js
 tsconfig.json
+tsdown.config.ts
 
 # 根目录散落的临时脚本
 fix-*.js
 skip-*.py
 .vscodeignore-temp
-*.js
