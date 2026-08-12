@@ -2,107 +2,65 @@
 /**
  * App — Git Graph WebView 根组件
  *
- * 整体布局：
- * ┌─────────────────────────────────┐
- * │         Controls (顶部栏)        │
- * ├──────────┬──────────────────────┤
- * │   Graph  │     Commit Table      │
- * │   (SVG)  │                      │
- * ├──────────┴──────────────────────┤
- * │          Footer (加载更多)       │
- * └─────────────────────────────────┘
+ * 布局由全局 main.css 控制（body #view, #content 等）。
+ * onMounted → requestAnimationFrame → store.initEngine(viewElem)
  */
+import { ref, onMounted } from 'vue';
+import { useGitGraphStore } from '@/stores/gitGraph';
 import Controls from '@/components/Controls.vue';
 import CommitGraph from '@/components/CommitGraph.vue';
 import CommitTable from '@/components/CommitTable.vue';
-import { useGitGraphStore } from '@/stores/gitGraph';
+import CommitDetails from '@/components/CommitDetails.vue';
 
 const store = useGitGraphStore();
+
+const viewElem = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  requestAnimationFrame(() => {
+    if (viewElem.value) {
+      try {
+        store.initEngine(viewElem.value);
+      } catch (err) {
+        showFatalError(err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err), 'initEngine');
+      }
+    } else {
+      showFatalError('viewElem is null', 'onMounted');
+    }
+  });
+});
+
+/** 在页面上显示致命错误 */
+function showFatalError(message: string, info: string) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#1e1e1e;color:#f48771;padding:20px;font-family:monospace;font-size:13px;white-space:pre-wrap;overflow:auto;';
+  overlay.textContent = '[Git Graph Fatal Error]\n\n' + message + '\n\nContext: ' + info;
+  document.body.appendChild(overlay);
+}
 </script>
 
 <template>
-  <div id="view" tabindex="-1">
+  <div
+    id="view"
+    ref="viewElem"
+    tabindex="-1"
+    :style="{ bottom: store.expandedCommit && store.isCdvDocked ? store.cdvHeightPx : '0' }"
+    @click="(e) => store.onBodyClick(e)"
+    @contextmenu="(e) => store.onBodyContextMenu(e)"
+  >
     <Controls />
     <div id="content">
       <CommitGraph />
       <CommitTable />
     </div>
-    <div id="footer">
-      <div
-        v-if="store.moreCommitsAvailable"
-        id="loadMoreCommitsBtn"
-        class="rounded-btn"
-      >
-        Load More Commits
-      </div>
+    <!-- Docked Commit Details View（固定在底部） -->
+    <div
+      v-if="store.expandedCommit && store.isCdvDocked"
+      id="cdv"
+      class="docked"
+      :style="{ height: store.cdvHeightPx }"
+    >
+      <CommitDetails />
     </div>
   </div>
 </template>
-
-<style>
-/* 全局样式（非 scoped）— 确保覆盖整个 WebView */
-
-/* CSS 变量 — Git Graph 颜色配置 */
-/* 这些变量会在 getHtmlForWebview() 中被后端注入的内联 <style> 覆盖 */
-:root {
-  --git-graph-color0: #ff0000;
-  --git-graph-color1: #00ff00;
-  --git-graph-color2: #0000ff;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
-  color: var(--vscode-foreground);
-  background-color: var(--vscode-editor-background);
-  overflow: hidden;
-  user-select: none;
-}
-
-#view {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-#content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-#commitGraph {
-  flex-shrink: 0;
-}
-
-#commitTable {
-  flex: 1;
-  overflow-y: auto;
-}
-
-#footer {
-  padding: 4px 8px;
-  border-top: 1px solid var(--vscode-panel-border);
-  text-align: center;
-}
-
-.rounded-btn {
-  display: inline-block;
-  padding: 4px 12px;
-  background-color: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.rounded-btn:hover {
-  opacity: 0.8;
-}
-</style>

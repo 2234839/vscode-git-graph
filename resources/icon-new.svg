@@ -1,51 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f0f1e"/>
-      <stop offset="100%" stop-color="#1a1a3a"/>
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="gFill" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fb923c"/>
-      <stop offset="50%" stop-color="#ec4899"/>
-      <stop offset="100%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
     </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- 圆角背景 -->
   <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
 
-  <!-- G 字主体：粗壮的弧线+横杠，小尺寸下更清晰 -->
-  <!-- 弧线 -->
-  <path d="M 700 340 A 260 260 0 1 0 700 684 L 480 684"
-        stroke="url(#gGrad)" stroke-width="88" fill="none"
-        stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <!-- 背景 git graph -->
+  <g fill="none" stroke-linecap="round" opacity="0.2">
+    <line x1="200" y1="100" x2="200" y2="924" stroke="#60a5fa" stroke-width="4"/>
+    <line x1="512" y1="100" x2="512" y2="924" stroke="#34d399" stroke-width="4"/>
+    <line x1="824" y1="100" x2="824" y2="924" stroke="#a78bfa" stroke-width="4"/>
+    <path d="M 200 300 Q 356 300 512 380" stroke="#60a5fa" stroke-width="4"/>
+    <path d="M 824 250 Q 668 250 512 330" stroke="#a78bfa" stroke-width="4"/>
+    <path d="M 512 580 Q 668 580 824 680" stroke="#34d399" stroke-width="4"/>
+    <path d="M 200 750 Q 356 750 512 830" stroke="#60a5fa" stroke-width="4"/>
+  </g>
+  <g opacity="0.25">
+    <circle cx="200" cy="160" r="12" fill="#60a5fa"/>
+    <circle cx="200" cy="500" r="12" fill="#60a5fa"/>
+    <circle cx="200" cy="880" r="12" fill="#60a5fa"/>
+    <circle cx="512" cy="100" r="12" fill="#34d399"/>
+    <circle cx="512" cy="440" r="12" fill="#34d399"/>
+    <circle cx="512" cy="720" r="12" fill="#34d399"/>
+    <circle cx="824" cy="190" r="12" fill="#a78bfa"/>
+    <circle cx="824" cy="520" r="12" fill="#a78bfa"/>
+    <circle cx="824" cy="840" r="12" fill="#a78bfa"/>
+  </g>
 
-  <!-- 横杠 -->
-  <path d="M 700 512 L 480 512"
-        stroke="url(#gGrad)" stroke-width="88" fill="none"
-        stroke-linecap="round"/>
-
-  <!-- 分支装饰：从横杠上方分出 -->
-  <line x1="590" y1="512" x2="590" y2="360" stroke="#22d3ee" stroke-width="20" stroke-linecap="round" opacity="0.85"/>
-  <circle cx="590" cy="348" r="28" fill="#22d3ee" opacity="0.9"/>
-  <circle cx="590" cy="348" r="14" fill="#0f0f1e" opacity="0.4"/>
-
-  <!-- 分支装饰：从底部向下延伸 -->
-  <line x1="480" y1="684" x2="480" y2="800" stroke="#4ade80" stroke-width="20" stroke-linecap="round" opacity="0.75"/>
-  <circle cx="480" cy="816" r="24" fill="#4ade80" opacity="0.85"/>
-  <circle cx="480" cy="816" r="12" fill="#0f0f1e" opacity="0.4"/>
-
-  <!-- G 弧线两端的 commit 圆点 -->
-  <circle cx="700" cy="340" r="38" fill="#0f0f1e"/>
-  <circle cx="700" cy="340" r="22" fill="#fb923c"/>
-
-  <circle cx="700" cy="684" r="38" fill="#0f0f1e"/>
-  <circle cx="700" cy="684" r="22" fill="#c084fc"/>
+  <!-- G 字母：用 sans-serif bold 保证跨平台一致 -->
+  <text x="512" y="540"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="660"
+        font-weight="900"
+        fill="url(#gFill)"
+        text-anchor="middle"
+        dominant-baseline="central">G</text>
 </svg>

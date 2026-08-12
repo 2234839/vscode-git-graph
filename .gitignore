@@ -5,3 +5,4 @@ node_modules_
 out
 *.vsix
 .backup/
+.vscode-dev/

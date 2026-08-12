@@ -1,44 +1,46 @@
 <script setup lang="ts">
 /**
- * CommitGraph — SVG Commit 图渲染组件
+ * CommitGraph — Git Graph SVG 可视化
  *
- * 设计决策：保留命令式 SVG DOM 操作（而非 Vue 声明式 SVG），原因：
- * - 数百个 commit 节点 + 路径段，Vue vDOM diff 开销远大于直接 DOM 操作
- * - graph.ts 已有成熟的布局算法（determinePath）和颜色分配（assignStableColours）
- * - 本组件仅作为 SVG 容器，由 Graph class 在内部管理 DOM
+ * 这个组件本身不渲染 SVG，而是提供一个容器 div (#commitGraph)，
+ * Graph 引擎（来自 lib/graph.ts）在 store.initEngine 时被实例化，
+ * 会将 SVG 渲染到这个容器中。
  *
- * 性能优化已实施：
- * - 事件委托：两个 listener 绑在 <g> 上，而非每个 vertex
- * - 离线 DOM 构建：所有子元素先 append 到 group，再一次性插入 SVG
- * - assignStableColours O(V+B)：替代原 O(V×B) 嵌套循环
+ * 当 commits 变化时，Graph 引擎的 loadCommits 被调用，
+ * 然后渲染自动触发。
  */
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, nextTick } from 'vue';
+import { useGitGraphStore } from '@/stores/gitGraph';
 
-/** SVG 容器引用 */
-const svgContainer = ref<HTMLElement | null>(null);
+const store = useGitGraphStore();
+const graphContainer = ref<HTMLElement | null>(null);
 
-// TODO: 在后续迁移中，从 @/graph 导入 Graph class
-// const graph = new Graph(...)
+/**
+ * 当 commits 变化时通知 Graph 渲染。
+ * Graph 引擎在 store.initEngine 中创建，传入 #commitGraph 元素。
+ */
+watch(() => store.commits, () => {
+  nextTick(() => {
+    store.graph?.render(store.expandedCommit);
+  });
+}, { deep: false });
+
+/** 监听 commitHead 变化 */
+watch(() => store.commitHead, () => {
+  nextTick(() => {
+    store.graph?.render(store.expandedCommit);
+  });
+});
 
 onMounted(() => {
-  // Graph 实例化将在后续迁移步骤中实现
+  /* Graph 引擎在 store.initEngine 中初始化，这里只确保容器存在 */
 });
-
-onBeforeUnmount(() => {
-  // 清理资源
-});
-
-// 当 commits 变化时重新渲染
-// TODO: watch(() => store.commits, () => graph.render())
 </script>
 
 <template>
-  <div id="commitGraph" ref="svgContainer" class="commit-graph" />
+  <div id="commitGraph" ref="graphContainer"></div>
 </template>
 
 <style scoped>
-.commit-graph {
-  position: relative;
-  height: 100%;
-}
+/* SVG 渲染样式由全局 main.css 控制 */
 </style>

@@ -34,9 +34,12 @@ export function getApi(): VsCodeApi {
 
 /**
  * 向扩展后端发送消息
+ *
+ * Vue 3 的 ref/reactive 使用 Proxy 包裹数据，postMessage 无法克隆 Proxy。
+ * 使用 JSON 序列化剥离 Proxy，确保消息可被结构化克隆。
  */
 export function sendMessage(msg: GG.RequestMessage) {
-  getApi().postMessage(msg);
+  getApi().postMessage(JSON.parse(JSON.stringify(msg)));
 }
 
 /**
@@ -49,19 +52,31 @@ export function showErrorMessage(message: string) {
 /**
  * 更新 Global View State
  */
-export function updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(key: K, value: GG.GitGraphViewGlobalState[K]) {
+export function updateGlobalViewState<K extends keyof GG.GitGraphViewGlobalState>(
+  key: K,
+  value: GG.GitGraphViewGlobalState[K],
+) {
   const gs = getWindowGlobals().globalState as GG.DeepWriteable<GG.GitGraphViewGlobalState>;
   gs[key] = value;
-  sendMessage({ command: 'setGlobalViewState', state: getWindowGlobals().globalState } as GG.RequestMessage);
+  sendMessage({
+    command: 'setGlobalViewState',
+    state: getWindowGlobals().globalState,
+  } as GG.RequestMessage);
 }
 
 /**
  * 更新 Workspace View State
  */
-export function updateWorkspaceViewState<K extends keyof GG.GitGraphViewWorkspaceState>(key: K, value: GG.GitGraphViewWorkspaceState[K]) {
+export function updateWorkspaceViewState<K extends keyof GG.GitGraphViewWorkspaceState>(
+  key: K,
+  value: GG.GitGraphViewWorkspaceState[K],
+) {
   const ws = getWindowGlobals().workspaceState as GG.DeepWriteable<GG.GitGraphViewWorkspaceState>;
   ws[key] = value;
-  sendMessage({ command: 'setWorkspaceViewState', state: getWindowGlobals().workspaceState } as GG.RequestMessage);
+  sendMessage({
+    command: 'setWorkspaceViewState',
+    state: getWindowGlobals().workspaceState,
+  } as GG.RequestMessage);
 }
 
 /**
@@ -80,7 +95,9 @@ export function getViewState<T = unknown>(): T | null {
 
 /**
  * 保存 WebView 状态
+ *
+ * Vue ref 的 Proxy 无法被 VS Code setState 序列化，用 JSON 剥离 Proxy。
  */
 export function setViewState<T = unknown>(state: T): T {
-  return getApi().setState<T>(state);
+  return getApi().setState<T>(JSON.parse(JSON.stringify(state)));
 }

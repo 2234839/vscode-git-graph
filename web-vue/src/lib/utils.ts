@@ -5,14 +5,24 @@
  */
 import * as GG from 'backend-types';
 import {
-  HTML_ESCAPES, HTML_UNESCAPES, HTML_ESCAPER_REGEX, HTML_UNESCAPER_REGEX,
-  MONTHS, SVG_ICONS, GIT_FILE_CHANGE_TYPES, ID_EVENT_CAPTURE_ELEM,
+  HTML_ESCAPES,
+  HTML_UNESCAPES,
+  HTML_ESCAPER_REGEX,
+  HTML_UNESCAPER_REGEX,
+  MONTHS,
+  SVG_ICONS,
+  GIT_FILE_CHANGE_TYPES,
+  ID_EVENT_CAPTURE_ELEM,
 } from './constants';
 import { UNCOMMITTED } from '../types';
 
 /* General Helpers */
 
-export function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>, equalElements: (a: T, b: T) => boolean) {
+export function arraysEqual<T>(
+  a: ReadonlyArray<T>,
+  b: ReadonlyArray<T>,
+  equalElements: (a: T, b: T) => boolean,
+) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (!equalElements(a[i], b[i])) return false;
@@ -37,19 +47,55 @@ export function arraysStrictlyEqualIgnoringOrder<T>(a: ReadonlyArray<T>, b: Read
 }
 
 export function modifyColourOpacity(colour: string, opacity: number) {
-  let fadedCol = 'rgba(0,0,0,0)', match;
-  if ((match = colour.match(/rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null) {
-    fadedCol = 'rgba(' + match[1] + ',' + match[2] + ',' + match[3] + ',' + (parseFloat(match[4]) * opacity).toFixed(2) + ')';
+  let fadedCol = 'rgba(0,0,0,0)',
+    match;
+  if (
+    (match = colour.match(
+      /rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/,
+    )) !== null
+  ) {
+    fadedCol =
+      'rgba(' +
+      match[1] +
+      ',' +
+      match[2] +
+      ',' +
+      match[3] +
+      ',' +
+      (parseFloat(match[4]) * opacity).toFixed(2) +
+      ')';
   } else if ((match = colour.match(/#\s*([0-9a-fA-F]+)/)) !== null) {
     let hex = match[1];
     let length = hex.length;
     if (length === 3 || length === 4 || length === 6 || length === 8) {
-      let col = length < 5
-        ? { r: hex[0] + hex[0], g: hex[1] + hex[1], b: hex[2] + hex[2], a: length === 4 ? hex[3] + hex[3] : 'ff' }
-        : { r: hex[0] + hex[1], g: hex[2] + hex[3], b: hex[4] + hex[5], a: length === 8 ? hex[6] + hex[7] : 'ff' };
-      fadedCol = 'rgba(' + parseInt(col.r, 16) + ',' + parseInt(col.g, 16) + ',' + parseInt(col.b, 16) + ',' + (parseInt(col.a, 16) * opacity / 255).toFixed(2) + ')';
+      let col =
+        length < 5 ?
+          {
+            r: hex[0] + hex[0],
+            g: hex[1] + hex[1],
+            b: hex[2] + hex[2],
+            a: length === 4 ? hex[3] + hex[3] : 'ff',
+          }
+        : {
+            r: hex[0] + hex[1],
+            g: hex[2] + hex[3],
+            b: hex[4] + hex[5],
+            a: length === 8 ? hex[6] + hex[7] : 'ff',
+          };
+      fadedCol =
+        'rgba(' +
+        parseInt(col.r, 16) +
+        ',' +
+        parseInt(col.g, 16) +
+        ',' +
+        parseInt(col.b, 16) +
+        ',' +
+        ((parseInt(col.a, 16) * opacity) / 255).toFixed(2) +
+        ')';
     }
-  } else if ((match = colour.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null) {
+  } else if (
+    (match = colour.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/)) !== null
+  ) {
     fadedCol = 'rgba(' + match[1] + ',' + match[2] + ',' + match[3] + ',' + opacity + ')';
   }
   return fadedCol;
@@ -69,22 +115,26 @@ export function getRepoName(path: string) {
   }
 }
 
-export function getSortedRepositoryPaths(repos: GG.GitRepoSet, order: GG.RepoDropdownOrder): ReadonlyArray<string> {
+export function getSortedRepositoryPaths(
+  repos: GG.GitRepoSet,
+  order: GG.RepoDropdownOrder,
+): ReadonlyArray<string> {
   const repoPaths = Object.keys(repos);
   if (order === GG.RepoDropdownOrder.WorkspaceFullPath) {
-    return repoPaths.sort((a, b) => repos[a].workspaceFolderIndex === repos[b].workspaceFolderIndex
-      ? a.localeCompare(b)
-      : repos[a].workspaceFolderIndex === null
-        ? 1
-        : repos[b].workspaceFolderIndex === null
-          ? -1
-          : repos[a].workspaceFolderIndex! - repos[b].workspaceFolderIndex!
+    return repoPaths.sort((a, b) =>
+      repos[a].workspaceFolderIndex === repos[b].workspaceFolderIndex ? a.localeCompare(b)
+      : repos[a].workspaceFolderIndex === null ? 1
+      : repos[b].workspaceFolderIndex === null ? -1
+      : repos[a].workspaceFolderIndex! - repos[b].workspaceFolderIndex!,
     );
   } else if (order === GG.RepoDropdownOrder.FullPath) {
     return repoPaths.sort((a, b) => a.localeCompare(b));
   } else {
-    return repoPaths.map((path) => ({ name: repos[path].name || getRepoName(path), path: path }))
-      .sort((a, b) => a.name !== b.name ? a.name.localeCompare(b.name) : a.path.localeCompare(b.path))
+    return repoPaths
+      .map((path) => ({ name: repos[path].name || getRepoName(path), path: path }))
+      .sort((a, b) =>
+        a.name !== b.name ? a.name.localeCompare(b.name) : a.path.localeCompare(b.path),
+      )
       .map((x) => x.path);
   }
 }
@@ -104,15 +154,21 @@ export function unescapeHtml(str: string) {
 export function formatCommaSeparatedList(items: string[]) {
   let str = '';
   for (let i = 0; i < items.length; i++) {
-    str += (i > 0 ? (i < items.length - 1 ? ', ' : ' & ') : '') + items[i];
+    str +=
+      (i > 0 ?
+        i < items.length - 1 ?
+          ', '
+        : ' & '
+      : '') + items[i];
   }
   return str;
 }
 
 export function formatShortDate(unixTimestamp: number, dateFormat: GG.DateFormat) {
   const date = new Date(unixTimestamp * 1000);
-  let dateStr = dateFormat.iso
-    ? date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate())
+  let dateStr =
+    dateFormat.iso ?
+      date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate())
     : date.getDate() + ' ' + MONTHS[date.getMonth()] + ' ' + date.getFullYear();
   let hourMinsStr = pad2(date.getHours()) + ':' + pad2(date.getMinutes());
   let formatted;
@@ -122,14 +178,29 @@ export function formatShortDate(unixTimestamp: number, dateFormat: GG.DateFormat
   } else if (dateFormat.type === GG.DateFormatType.DateOnly) {
     formatted = dateStr;
   } else {
-    let diff = Math.round((new Date()).getTime() / 1000) - unixTimestamp, unit;
-    if (diff < 60) { unit = 'second'; }
-    else if (diff < 3600) { unit = 'minute'; diff /= 60; }
-    else if (diff < 86400) { unit = 'hour'; diff /= 3600; }
-    else if (diff < 604800) { unit = 'day'; diff /= 86400; }
-    else if (diff < 2629800) { unit = 'week'; diff /= 604800; }
-    else if (diff < 31557600) { unit = 'month'; diff /= 2629800; }
-    else { unit = 'year'; diff /= 31557600; }
+    let diff = Math.round(new Date().getTime() / 1000) - unixTimestamp,
+      unit;
+    if (diff < 60) {
+      unit = 'second';
+    } else if (diff < 3600) {
+      unit = 'minute';
+      diff /= 60;
+    } else if (diff < 86400) {
+      unit = 'hour';
+      diff /= 3600;
+    } else if (diff < 604800) {
+      unit = 'day';
+      diff /= 86400;
+    } else if (diff < 2629800) {
+      unit = 'week';
+      diff /= 604800;
+    } else if (diff < 31557600) {
+      unit = 'month';
+      diff /= 2629800;
+    } else {
+      unit = 'year';
+      diff /= 31557600;
+    }
     diff = Math.round(diff);
     formatted = diff + ' ' + unit + (diff !== 1 ? 's' : '') + ' ago';
   }
@@ -144,8 +215,27 @@ export function formatLongDate(unixTimestamp: number, isoDateFormat: boolean) {
   if (isoDateFormat) {
     let timezoneOffset = date.getTimezoneOffset();
     let absoluteTimezoneOffset = Math.abs(timezoneOffset);
-    let timezone = timezoneOffset === 0 ? 'Z' : ' ' + (timezoneOffset < 0 ? '+' : '-') + pad2(Math.floor(absoluteTimezoneOffset / 60)) + pad2(absoluteTimezoneOffset % 60);
-    return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) + ' ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ':' + pad2(date.getSeconds()) + timezone;
+    let timezone =
+      timezoneOffset === 0 ? 'Z' : (
+        ' ' +
+        (timezoneOffset < 0 ? '+' : '-') +
+        pad2(Math.floor(absoluteTimezoneOffset / 60)) +
+        pad2(absoluteTimezoneOffset % 60)
+      );
+    return (
+      date.getFullYear() +
+      '-' +
+      pad2(date.getMonth() + 1) +
+      '-' +
+      pad2(date.getDate()) +
+      ' ' +
+      pad2(date.getHours()) +
+      ':' +
+      pad2(date.getMinutes()) +
+      ':' +
+      pad2(date.getSeconds()) +
+      timezone
+    );
   } else {
     return date.toString();
   }
@@ -157,7 +247,11 @@ export function addListenerToClass(className: string, event: string, eventListen
   addListenerToCollectionElems(document.getElementsByClassName(className), event, eventListener);
 }
 
-export function addListenerToCollectionElems(elems: HTMLCollectionOf<Element>, event: string, eventListener: EventListener) {
+export function addListenerToCollectionElems(
+  elems: HTMLCollectionOf<Element>,
+  event: string,
+  eventListener: EventListener,
+) {
   for (let i = 0; i < elems.length; i++) {
     elems[i].addEventListener(event, eventListener);
   }
@@ -167,7 +261,11 @@ export function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
   referenceNode.parentNode!.insertBefore(newNode, referenceNode.nextSibling);
 }
 
-export function insertBeforeFirstChildWithClass(newChild: HTMLElement, parent: HTMLElement, className: string) {
+export function insertBeforeFirstChildWithClass(
+  newChild: HTMLElement,
+  parent: HTMLElement,
+  className: string,
+) {
   let referenceNode: Node | null = null;
   for (let i = 0; i < parent.children.length; i++) {
     if (parent.children[i].classList.contains(className)) {
@@ -187,7 +285,11 @@ export function alterClass(elem: HTMLElement, className: string, state: boolean)
   return false;
 }
 
-export function alterClassOfCollection(elems: HTMLCollectionOf<HTMLElement>, className: string, state: boolean) {
+export function alterClassOfCollection(
+  elems: HTMLCollectionOf<HTMLElement>,
+  className: string,
+  state: boolean,
+) {
   const lockedElems = [];
   for (let i = 0; i < elems.length; i++) lockedElems.push(elems[i]);
   for (let i = 0; i < lockedElems.length; i++) alterClass(lockedElems[i], className, state);
@@ -224,7 +326,12 @@ export function getChildUl(elem: HTMLElement) {
   return null;
 }
 
-export function observeElemScroll(id: string, initialScrollTop: number, onScroll: (scrollTop: number) => void, onScrolled: () => void) {
+export function observeElemScroll(
+  id: string,
+  initialScrollTop: number,
+  onScroll: (scrollTop: number) => void,
+  onScrolled: () => void,
+) {
   const elem = document.getElementById(id);
   if (elem === null) return;
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -234,7 +341,10 @@ export function observeElemScroll(id: string, initialScrollTop: number, onScroll
     if (el === null) return;
     onScroll(el.scrollTop);
     if (timeout !== null) clearTimeout(timeout);
-    timeout = setTimeout(() => { onScrolled(); timeout = null; }, 250);
+    timeout = setTimeout(() => {
+      onScrolled();
+      timeout = null;
+    }, 250);
   });
 }
 
@@ -246,26 +356,45 @@ export function getCommitElems() {
 
 /** 解析 BooleanOverride 为实际 boolean */
 export function getShowStashes(repoValue: GG.BooleanOverride, configShowStashes: boolean) {
-  return repoValue === GG.BooleanOverride.Default ? configShowStashes : repoValue === GG.BooleanOverride.Enabled;
+  return repoValue === GG.BooleanOverride.Default ?
+      configShowStashes
+    : repoValue === GG.BooleanOverride.Enabled;
 }
 
 export function getShowTags(repoValue: GG.BooleanOverride, configShowTags: boolean) {
-  return repoValue === GG.BooleanOverride.Default ? configShowTags : repoValue === GG.BooleanOverride.Enabled;
+  return repoValue === GG.BooleanOverride.Default ?
+      configShowTags
+    : repoValue === GG.BooleanOverride.Enabled;
 }
 
-export function getIncludeCommitsMentionedByReflogs(repoValue: GG.BooleanOverride, configValue: boolean) {
-  return repoValue === GG.BooleanOverride.Default ? configValue : repoValue === GG.BooleanOverride.Enabled;
+export function getIncludeCommitsMentionedByReflogs(
+  repoValue: GG.BooleanOverride,
+  configValue: boolean,
+) {
+  return repoValue === GG.BooleanOverride.Default ?
+      configValue
+    : repoValue === GG.BooleanOverride.Enabled;
 }
 
 export function getOnlyFollowFirstParent(repoValue: GG.BooleanOverride, configValue: boolean) {
-  return repoValue === GG.BooleanOverride.Default ? configValue : repoValue === GG.BooleanOverride.Enabled;
+  return repoValue === GG.BooleanOverride.Default ?
+      configValue
+    : repoValue === GG.BooleanOverride.Enabled;
 }
 
-export function getOnRepoLoadShowCheckedOutBranch(repoValue: GG.BooleanOverride, configValue: boolean) {
-  return repoValue === GG.BooleanOverride.Default ? configValue : repoValue === GG.BooleanOverride.Enabled;
+export function getOnRepoLoadShowCheckedOutBranch(
+  repoValue: GG.BooleanOverride,
+  configValue: boolean,
+) {
+  return repoValue === GG.BooleanOverride.Default ?
+      configValue
+    : repoValue === GG.BooleanOverride.Enabled;
 }
 
-export function getOnRepoLoadShowSpecificBranches(repoValue: ReadonlyArray<string> | null, configValue: ReadonlyArray<string>): ReadonlyArray<string> {
+export function getOnRepoLoadShowSpecificBranches(
+  repoValue: ReadonlyArray<string> | null,
+  configValue: ReadonlyArray<string>,
+): ReadonlyArray<string> {
   return repoValue === null ? configValue : repoValue;
 }
 
@@ -278,7 +407,11 @@ export function abbrevCommit(commitHash: string) {
  * 计算分支标签（heads + remotes），根据配置决定是否合并显示
  * @param combineLocalAndRemote 是否合并本地和远程分支标签
  */
-export function getBranchLabels(heads: ReadonlyArray<string>, remotes: ReadonlyArray<GG.GitCommitRemote>, combineLocalAndRemote: boolean) {
+export function getBranchLabels(
+  heads: ReadonlyArray<string>,
+  remotes: ReadonlyArray<GG.GitCommitRemote>,
+  combineLocalAndRemote: boolean,
+) {
   let headLabels: { name: string; remotes: string[] }[] = [],
     headLookup: { [name: string]: number } = {},
     remoteLabels: ReadonlyArray<GG.GitCommitRemote>;
@@ -335,7 +468,10 @@ export class ImageResizer {
   public resize(dataUri: string, callback: (dataUri: string) => void) {
     if (this.canvas === null) this.canvas = document.createElement('canvas');
     if (this.context === null) this.context = this.canvas.getContext('2d');
-    if (this.context === null) { callback(dataUri); return; }
+    if (this.context === null) {
+      callback(dataUri);
+      return;
+    }
 
     let image = new Image();
     image.onload = () => {
@@ -422,6 +558,38 @@ export class EventOverlay {
   }
 }
 
+/**
+ * 解析 BooleanOverride 为 showRemoteBranches 的实际 boolean
+ */
+export function getShowRemoteBranches(
+  repoValue: GG.BooleanOverride,
+  configShowRemoteBranches?: boolean,
+) {
+  return repoValue === GG.BooleanOverride.Default ?
+      (configShowRemoteBranches ?? false)
+    : repoValue === GG.BooleanOverride.Enabled;
+}
+
+/**
+ * 解析 RepoCommitOrdering 为 CommitOrdering
+ */
+export function getCommitOrdering(
+  repoValue: GG.RepoCommitOrdering,
+  configCommitOrdering?: GG.CommitOrdering,
+): GG.CommitOrdering {
+  switch (repoValue) {
+    case GG.RepoCommitOrdering.Default:
+      return configCommitOrdering ?? GG.CommitOrdering.Date;
+    case GG.RepoCommitOrdering.Date:
+      return GG.CommitOrdering.Date;
+    case GG.RepoCommitOrdering.AuthorDate:
+      return GG.CommitOrdering.AuthorDate;
+    case GG.RepoCommitOrdering.Topological:
+      return GG.CommitOrdering.Topological;
+  }
+}
+
 /* Re-export commonly used */
 export { SVG_ICONS, GIT_FILE_CHANGE_TYPES };
 export { UNCOMMITTED };
+export { SHOW_ALL_BRANCHES } from './constants';
