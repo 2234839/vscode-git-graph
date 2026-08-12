@@ -588,9 +588,9 @@ export class Dialog {
         t('errorPrefix') +
         message +
         '</span>' +
-        (reason !== null ?
+        (reason ?
           '<br><span class="messageContent errorContent">' +
-          escapeHtml(reason).split('\n').join('<br>') +
+          escapeHtml(String(reason)).split('\n').join('<br>') +
           '</span>'
         : ''),
       actionName,
