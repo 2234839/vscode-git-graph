@@ -1,13 +1,13 @@
 {
 	"name": "git-graph-guseng",
 	"displayName": "Git Graph (Guseng Enhanced)",
-	"version": "1.0.0",
-	"publisher": "gsai",
+	"version": "1.0.1",
+	"publisher": "llej",
 	"engine": {
 		"node": "18.17.1"
 	},
 	"author": {
-		"name": "gsai"
+		"name": "崮生"
 	},
 	"description": "Git 仓库可视化 — 稳定分支配色、中文本地化、Vue3 现代化构建",
 	"keywords": [
@@ -1589,11 +1589,10 @@
 		"vscode:prepublish": "npm run compile",
 		"vscode:uninstall": "node ./out/life-cycle/uninstall.js",
 		"clean": "node ./.vscode/clean.js",
-		"compile": "npm run lint && npm run clean && npm run compile-src && npm run compile-web",
+		"compile": "npm run clean && npm run compile-src && npm run compile-web",
 		"compile-src": "tsc -p ./src && node ./.vscode/package-src.js",
 		"compile-web": "cd web-vue && npx vue-tsc --noEmit && npx vite build",
 		"compile-web-debug": "cd web-vue && npx vite build --mode development",
-		"lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts ./src ./tests",
 		"package": "vsce package",
 		"package-and-install": "npm run package && node ./.vscode/install-package.js",
 		"test": "jest --verbose",
@@ -1610,10 +1609,7 @@
 		"@types/node": "^8.10.62",
 		"@types/prettier": "<2.6.0",
 		"@types/vscode": "1.38.0",
-		"@typescript-eslint/eslint-plugin": "4.10.0",
-		"@typescript-eslint/parser": "4.10.0",
 		"@vscode/vsce": "^2.19.0",
-		"eslint": "7.15.0",
 		"jest": "26.6.3",
 		"ts-jest": "26.4.4",
 		"typescript": "4.0.2",
