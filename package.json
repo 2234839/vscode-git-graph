@@ -1,6 +1,6 @@
 {
-	"name": "git-graph-guseng",
-	"displayName": "Git Graph (Guseng Enhanced)",
+	"name": "guseng-graph",
+	"displayName": "Guseng Git History",
 	"version": "1.2.0",
 	"publisher": "llej",
 	"engine": {

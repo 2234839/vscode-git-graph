@@ -381,7 +381,7 @@ export function createPullRequest(
  */
 export function openExtensionSettings(): Thenable<ErrorInfo> {
 	return vscode.commands
-		.executeCommand('workbench.action.openSettings', '@ext:llej.git-graph-guseng')
+		.executeCommand('workbench.action.openSettings', '@ext:llej.guseng-graph')
 		.then(
 			() => null,
 			() => 'Visual Studio Code was unable to open the Git Graph Extension Settings.'
