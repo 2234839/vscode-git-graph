@@ -25,7 +25,8 @@ import {
 	RepoDropdownOrder,
 	SquashMessageFormat,
 	TabIconColourTheme,
-	TagType
+	TagType,
+	UnmergedBranchesConfig
 } from './types';
 
 const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
@@ -456,6 +457,18 @@ class Config {
 			showSpecificBranches: Array.isArray(branches)
 				? branches.filter((branch) => typeof branch === 'string')
 				: []
+		};
+	}
+
+	/**
+	 * Get the unmerged branches configuration.
+	 */
+	get unmergedBranches(): UnmergedBranchesConfig {
+		return {
+			enabled: !!this.config.get('unmergedBranches.enabled', true),
+			showBar: !!this.config.get('unmergedBranches.showBar', true),
+			maxBarEntries: Math.max(0, this.config.get('unmergedBranches.maxBarEntries', 5)),
+			baseBranch: this.config.get('unmergedBranches.baseBranch', 'HEAD'),
 		};
 	}
 

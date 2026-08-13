@@ -267,6 +267,7 @@ export interface GitGraphViewConfig {
   readonly showStashes: boolean;
   readonly showTags: boolean;
   readonly stickyHeader: boolean;
+  readonly unmergedBranches: UnmergedBranchesConfig;
 }
 
 export interface GitGraphViewGlobalState {
@@ -324,6 +325,17 @@ export interface OnRepoLoadConfig {
   readonly scrollToHead: boolean;
   readonly showCheckedOutBranch: boolean;
   readonly showSpecificBranches: ReadonlyArray<string>;
+}
+
+export interface UnmergedBranchesConfig {
+  /** 是否启用未合并分支检测功能（总开关，关闭后不做任何计算和高亮） */
+  readonly enabled: boolean;
+  /** 是否在 Graph 视图中显示未合并分支导航条 */
+  readonly showBar: boolean;
+  /** 导航条默认显示的分支数量上限（超出折叠） */
+  readonly maxBarEntries: number;
+  /** 判断未合并的基准：'HEAD' 表示当前 HEAD，其他值作为分支名 */
+  readonly baseBranch: string;
 }
 
 export interface ReferenceLabelsConfig {
@@ -954,6 +966,8 @@ export interface RequestLoadRepoInfo extends RepoRequest {
   readonly showRemoteBranches: boolean;
   readonly showStashes: boolean;
   readonly hideRemotes: ReadonlyArray<string>;
+  /** 判断未合并分支的基准分支（'HEAD' 或分支名），未传时使用全局配置 */
+  readonly unmergedBaseBranch?: string;
 }
 export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
   readonly command: 'loadRepoInfo';
@@ -963,6 +977,8 @@ export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
   readonly remotes: ReadonlyArray<string>;
   readonly stashes: ReadonlyArray<GitStash>;
   readonly isRepo: boolean;
+  /** 未合并到 HEAD 的本地分支列表 */
+  readonly unmergedBranches: ReadonlyArray<string>;
 }
 
 export interface RequestLoadRepos extends BaseMessage {

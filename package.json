@@ -1,7 +1,7 @@
 {
 	"name": "git-graph-guseng",
 	"displayName": "Git Graph (Guseng Enhanced)",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"publisher": "llej",
 	"engine": {
 		"node": "18.17.1"
@@ -1229,6 +1229,27 @@
 					"default": true,
 					"description": "视图滚动时保持标题可见"
 				},
+				"git-graph.unmergedBranches.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "启用未合并分支检测功能。关闭后不会计算未合并分支，也不会高亮或显示导航条。"
+				},
+				"git-graph.unmergedBranches.showBar": {
+					"type": "boolean",
+					"default": true,
+					"description": "在 Git Graph 视图顶部显示未合并分支导航条，方便快速定位和操作未合并的分支。"
+				},
+				"git-graph.unmergedBranches.maxBarEntries": {
+					"type": "number",
+					"default": 5,
+					"minimum": 0,
+					"description": "未合并分支导航条中默认显示的分支数量上限。超出此数量的分支会被折叠，可点击展开。设为 0 表示不限制。"
+				},
+				"git-graph.unmergedBranches.baseBranch": {
+					"type": "string",
+					"default": "HEAD",
+					"description": "判断分支未合并时使用的基准。设为 'HEAD' 表示以当前 HEAD 为基准，也可以设为具体的分支名（如 'main'、'master'、'develop'）。"
+				},
 				"git-graph.tabIconColourTheme": {
 					"type": "string",
 					"enum": [
@@ -1587,7 +1608,6 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"vscode:uninstall": "node ./out/life-cycle/uninstall.js",
 		"clean": "node ./.vscode/clean.js",
 		"compile": "npm run clean && npm run compile-src && npm run compile-web",
 		"compile-src": "tsdown && tsc ./src/types.ts --declaration --outDir ./out --module commonjs --target es6 --strict --skipLibCheck && node ./.vscode/package-src.js",

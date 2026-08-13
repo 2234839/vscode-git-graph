@@ -265,6 +265,7 @@ export class DataSource extends Disposable {
     showRemoteBranches: boolean,
     showStashes: boolean,
     hideRemotes: ReadonlyArray<string>,
+    unmergedBaseBranch: string,
   ): Promise<GitRepoInfo> {
     return Promise.all([
       this.getBranches(repo, showRemoteBranches, hideRemotes),
@@ -272,14 +273,22 @@ export class DataSource extends Disposable {
       showStashes ? this.getStashes(repo) : Promise.resolve([]),
       this.getTags(repo),
     ])
-      .then((results) => {
-        /* eslint no-console: "error" */
+      .then(async (results) => {
+        const branchData = results[0];
+        /** 基准分支：'HEAD' 用当前 HEAD，否则用指定分支名 */
+        const baseRef = unmergedBaseBranch === 'HEAD'
+          ? branchData.head
+          : unmergedBaseBranch;
+        const unmergedBranches = baseRef
+          ? await this.getUnmergedBranches(repo, baseRef).catch(() => [] as string[])
+          : [];
         return {
-          branches: results[0].branches,
-          head: results[0].head,
+          branches: branchData.branches,
+          head: branchData.head,
           remotes: results[1],
           stashes: results[2],
           tags: results[3],
+          unmergedBranches,
           error: null,
         };
       })
@@ -290,6 +299,7 @@ export class DataSource extends Disposable {
           remotes: [],
           stashes: [],
           tags: [],
+          unmergedBranches: [],
           error: errorMessage,
         };
       });
@@ -1947,6 +1957,30 @@ export class DataSource extends Disposable {
   }
 
   /**
+   * Get the local branches that have NOT been merged into the specified target branch.
+   * @param repo The path of the repository.
+   * @param targetBranch The branch to check merges against (typically HEAD).
+   * @returns An array of branch names that are not fully merged into targetBranch.
+   */
+  private getUnmergedBranches(repo: string, targetBranch: string): Promise<string[]> {
+    return this.spawnGit(
+      ['branch', '--no-color', '--no-merged', targetBranch],
+      repo,
+      (stdout) => {
+        const branches: string[] = [];
+        const lines = stdout.split(EOL_REGEX);
+        for (let i = 0; i < lines.length - 1; i++) {
+          const name = lines[i].substring(2).split(' -> ')[0];
+          if (name && !INVALID_BRANCH_REGEXP.test(name)) {
+            branches.push(name);
+          }
+        }
+        return branches;
+      },
+    );
+  }
+
+  /**
    * Get the base commit details for the Commit Details View.
    * @param repo The path of the repository.
    * @param commitHash The hash of the commit open in the Commit Details View.
@@ -2800,6 +2834,8 @@ interface GitRepoInfo extends GitBranchData {
   remotes: string[];
   stashes: GitStash[];
   tags: string[];
+  /** 未合并到 HEAD 的本地分支列表 */
+  unmergedBranches: string[];
 }
 
 interface GitRepoConfigData {

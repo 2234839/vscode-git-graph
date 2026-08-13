@@ -28,6 +28,41 @@ const singleRepo = computed(() => Object.keys(store.gitRepos).length === 1);
 /** 是否正在刷新 */
 const isRefreshing = computed(() => store.isRefreshing);
 
+/** 未合并分支导航条：配置的最大显示数量（0 = 不限制） */
+const maxBarEntries = computed(() => store.config.unmergedBranches?.maxBarEntries ?? 5);
+
+/** 未合并分支功能是否启用 */
+const unmergedEnabled = computed(() => store.config.unmergedBranches?.enabled ?? true);
+
+/** 导航条中实际显示的分支（受 maxBarEntries 限制） */
+const visibleBranches = computed(() => {
+  const all = store.unmergedBranchHeads;
+  if (store.unmergedBranchBarExpanded || maxBarEntries.value === 0) return all;
+  return all.slice(0, maxBarEntries.value);
+});
+
+/** 被折叠的分支数量 */
+const hiddenCount = computed(() => {
+  if (maxBarEntries.value === 0) return 0;
+  return Math.max(0, store.unmergedBranchHeads.length - maxBarEntries.value);
+});
+
+/** 切换导航条显示/隐藏 */
+function toggleBar() {
+  store.unmergedBranchBarEnabled = !store.unmergedBranchBarEnabled;
+}
+
+/** 基准分支可选项：本地分支列表（不含 HEAD，它已作为固定选项） */
+const baseBranchOptions = computed(() =>
+  store.gitBranches.filter((b) => !b.startsWith('remotes/'))
+);
+
+/** 基准分支切换 */
+function onBaseBranchChange(e: Event) {
+  const value = (e.target as HTMLSelectElement).value;
+  store.setUnmergedBaseBranch(value);
+}
+
 /** fetchBtn title */
 const fetchBtnTitle = computed(() =>
   store.config.fetchAndPrune ? store.t('fetchAndPrune') : store.t('fetchFromRemote'),
@@ -152,6 +187,44 @@ function onFetch() {
     <div id="fetchBtn" :title="fetchBtnTitle" @click="onFetch" v-html="SVG_ICONS.download"></div>
     <div id="refreshBtn" :class="{ refreshing: isRefreshing }" :title="refreshBtnTitle" @click="onRefresh" v-html="isRefreshing ? SVG_ICONS.loading : SVG_ICONS.refresh"></div>
   </div>
+
+  <!-- 未合并分支快速导航条 -->
+  <div id="unmergedBranchBar" v-if="unmergedEnabled && store.unmergedBranchBarEnabled && visibleBranches.length > 0">
+    <span class="unmergedBranchLabel" @click="toggleBar" title="点击切换显示/隐藏">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: -1px; margin-right: 3px; color: var(--vscode-charts-yellow, #cca700);">
+        <path d="M1.5 1.75V13.5h13.75a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1-.75-.75V1.75a.75.75 0 0 1 1.5 0Zm14.28 2.53-5.25 5.25a.75.75 0 0 1-1.06 0L7 7.06l-2.97 2.97a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.5-3.5a.75.75 0 0 1 1.06 0l2.47 2.47 4.72-4.72a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"/>
+      </svg>
+      Unmerged
+    </span>
+    <select
+      class="unmergedBaseSelect"
+      :value="store.unmergedBaseBranch"
+      @change="onBaseBranchChange"
+      title="选择判断未合并的基准分支"
+    >
+      <option value="HEAD">HEAD (current)</option>
+      <option v-for="branch in baseBranchOptions" :key="branch" :value="branch">{{ branch }}</option>
+    </select>
+    <span class="unmergedBranchDivider">·</span>
+    <span
+      v-for="branch in visibleBranches"
+      :key="branch.name"
+      class="unmergedBranchChip"
+      :title="'Jump to ' + branch.name"
+      @click="store.scrollToCommit(branch.hash, true, true)"
+    >{{ branch.name }}</span>
+    <span
+      v-if="hiddenCount > 0 && !store.unmergedBranchBarExpanded"
+      class="unmergedBranchMore"
+      @click="store.unmergedBranchBarExpanded = true"
+      :title="'Show ' + hiddenCount + ' more unmerged branches'"
+    >+{{ hiddenCount }} more</span>
+    <span
+      v-if="store.unmergedBranchBarExpanded && hiddenCount > 0"
+      class="unmergedBranchMore"
+      @click="store.unmergedBranchBarExpanded = false"
+    >collapse</span>
+  </div>
 </template>
 
 <style scoped>
@@ -274,5 +347,73 @@ function onFetch() {
 	cursor: pointer;
 	-webkit-user-select: none;
 	user-select: none;
+}
+
+/* 未合并分支导航条 */
+#unmergedBranchBar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px 4px 8px;
+	background-color: rgba(204, 167, 0, 0.06);
+	border-bottom: 1px solid rgba(204, 167, 0, 0.2);
+	font-size: 11px;
+	line-height: 1.4;
+	-webkit-user-select: none;
+	user-select: none;
+}
+.unmergedBranchLabel {
+	color: var(--vscode-charts-yellow, #cca700);
+	font-weight: 700;
+	margin-right: 4px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+.unmergedBaseSelect {
+	font-size: 11px;
+	line-height: 1.4;
+	padding: 0 4px;
+	border: 1px solid var(--vscode-charts-yellow, #cca700);
+	border-radius: 3px;
+	background-color: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	cursor: pointer;
+	outline: none;
+	max-width: 120px;
+}
+.unmergedBaseSelect:hover {
+	background-color: rgba(204, 167, 0, 0.12);
+}
+.unmergedBaseSelect:focus {
+	border-color: var(--vscode-focusBorder, #007fd4);
+}
+.unmergedBranchDivider {
+	color: var(--vscode-charts-yellow, #cca700);
+	opacity: 0.5;
+	margin: 0 2px;
+}
+.unmergedBranchChip {
+	display: inline-block;
+	padding: 1px 8px;
+	border: 1px solid var(--vscode-charts-yellow, #cca700);
+	border-radius: 10px;
+	color: var(--vscode-editor-foreground);
+	background-color: rgba(204, 167, 0, 0.08);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background-color 0.15s;
+}
+.unmergedBranchChip:hover {
+	background-color: rgba(204, 167, 0, 0.25);
+}
+.unmergedBranchMore {
+	display: inline-block;
+	padding: 1px 6px;
+	color: var(--vscode-charts-yellow, #cca700);
+	cursor: pointer;
+	white-space: nowrap;
+	font-size: 11px;
+	text-decoration: underline;
 }
 </style>

@@ -150,7 +150,7 @@ onUpdated(() => {
             <span
               v-for="ref in row.refBranches"
               :key="ref.type + ref.name"
-              :class="['gitRef', ref.type, { active: ref.isActive }]"
+              :class="['gitRef', ref.type, { active: ref.isActive, unmerged: ref.isUnmerged }]"
               :data-name="ref.name"
               @click="(e) => store.onGitRefClick(e, ref.name)"
               @dblclick="(e) => store.onGitRefDblClick(e, row.index, row.hash, e.currentTarget as HTMLElement)"
@@ -456,6 +456,16 @@ onUpdated(() => {
 }
 .gitRef.active .gitRefName {
 	font-weight: bold;
+}
+.gitRef.unmerged {
+	border-color: var(--vscode-charts-yellow, #cca700);
+	background-color: rgba(204, 167, 0, 0.12);
+}
+.gitRef.unmerged :deep(svg) {
+	background-color: var(--vscode-charts-yellow, #cca700);
+}
+.gitRef.unmerged.active {
+	border-color: var(--vscode-charts-yellow, #cca700);
 }
 .gitRef :deep(svg) {
 	background-color: var(--git-graph-color);

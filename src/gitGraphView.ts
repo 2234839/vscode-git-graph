@@ -634,6 +634,7 @@ export class GitGraphView extends Disposable {
             msg.showRemoteBranches,
             msg.showStashes,
             msg.hideRemotes,
+            msg.unmergedBaseBranch ?? getConfig(msg.repo).unmergedBranches.baseBranch,
           ),
           isRepo = true;
         if (repoInfo.error) {
@@ -993,6 +994,7 @@ export class GitGraphView extends Disposable {
         showRemoteBranches: config.showRemoteBranches,
         showStashes: config.showStashes,
         showTags: config.showTags,
+        unmergedBranches: config.unmergedBranches,
       },
       lastActiveRepo: this.extensionState.getLastActiveRepo(),
       loadViewTo: this.loadViewTo,

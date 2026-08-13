@@ -6,6 +6,8 @@ export interface DropdownOption {
   readonly name: string;
   readonly value: string;
   readonly hint?: string;
+  /** hint 的附加 CSS class */
+  readonly hintClass?: string;
 }
 
 /**
@@ -266,9 +268,16 @@ export class Dropdown {
           '<div class="dropdownOptionMultiSelected">' + SVG_ICONS.check + '</div>'
         : '') +
         escapedName +
-        (typeof this.options[i].hint === 'string' && this.options[i].hint !== '' ?
-          '<span class="dropdownOptionHint">' + escapeHtml(this.options[i].hint!) + '</span>'
-        : '') +
+        (() => {
+          const hint = this.options[i].hint;
+          const hintClass = this.options[i].hintClass;
+          if (typeof hint === 'string' && hint !== '') {
+            return '<span class="dropdownOptionHint' +
+              (hintClass ? ' ' + escapeHtml(hintClass) : '') +
+              '">' + escapeHtml(hint) + '</span>';
+          }
+          return '';
+        })() +
         (this.showInfo ?
           '<div class="dropdownOptionInfo" title="' +
           escapeHtml(this.options[i].value) +

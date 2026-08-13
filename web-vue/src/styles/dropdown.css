@@ -91,6 +91,11 @@ body.vscode-high-contrast .dropdownOption:hover{
 	opacity:0.6;
 	margin-left:8px;
 }
+.dropdownOptionHint.unmerged{
+	color:var(--vscode-charts-yellow, #cca700);
+	opacity:0.9;
+	font-weight:bold;
+}
 .dropdownOptionInfo{
 	position:absolute;
 	width:14px;

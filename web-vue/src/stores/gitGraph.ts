@@ -112,6 +112,13 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
   const globalState = getWindowGlobals().globalState;
   const config = ref<Config>(initialState.config);
 
+  /** 未合并分支导航条的临时开关（初始值由全局配置决定） */
+  const unmergedBranchBarEnabled = ref(initialState.config.unmergedBranches?.showBar ?? true);
+  /** 导航条是否展开所有分支（超出 maxBarEntries 的） */
+  const unmergedBranchBarExpanded = ref(false);
+  /** 当前选择的基准分支（用于判断未合并），默认 HEAD（即当前检出分支） */
+  const unmergedBaseBranch = ref('HEAD');
+
   /* ================================================================
    * 仓库状态
    * ================================================================ */
@@ -143,6 +150,8 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
   const gitRemotes = ref<ReadonlyArray<string>>([]);
   const gitStashes = ref<ReadonlyArray<GG.GitStash>>([]);
   const gitTags = ref<ReadonlyArray<string>>([]);
+  /** 未合并到基准分支的本地分支列表 */
+  const unmergedBranches = ref<ReadonlyArray<string>>([]);
 
   /* ================================================================
    * 提交数据
@@ -279,6 +288,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
           type: 'head',
           name: head.name,
           isActive,
+          isUnmerged: unmergedBranches.value.includes(head.name),
           remotes: head.remotes,
         });
       }
@@ -358,6 +368,35 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     return typeof commitLookup.value[hash] === 'number' ? commitLookup.value[hash] : null;
   }
 
+  /**
+   * 未合并分支导航数据：每个未合并本地分支 → 其 head commit hash
+   * 用于在前端显示快速跳转按钮，点击滚动到该分支位置
+   */
+  /** 未合并分支导航数据（按 commit 日期降序，最近活跃优先） */
+  const unmergedBranchHeads = computed<{ name: string; hash: string; date: number }[]>(() => {
+    if (unmergedBranches.value.length === 0 || commits.value.length === 0) return [];
+    /** 构建 branch name → { hash, date } 的映射（取最新的 head commit） */
+    const branchInfo = new Map<string, { hash: string; date: number }>();
+    for (const commit of commits.value) {
+      if (commit.heads) {
+        for (const head of commit.heads) {
+          /** commits 数组按 date 降序，取第一次出现（即最新）即可 */
+          if (!branchInfo.has(head)) {
+            branchInfo.set(head, { hash: commit.hash, date: commit.date });
+          }
+        }
+      }
+    }
+    const result: { name: string; hash: string; date: number }[] = [];
+    for (const name of unmergedBranches.value) {
+      const info = branchInfo.get(name);
+      if (info) result.push({ name, hash: info.hash, date: info.date });
+    }
+    /** 按日期降序排序 */
+    result.sort((a, b) => b.date - a.date);
+    return result;
+  });
+
   function getBranchOptions(includeShowAll?: boolean): DropdownOption[] {
     const options: DropdownOption[] = [];
     if (includeShowAll) options.push({ name: t('showAllBranches'), value: SHOW_ALL_BRANCHES });
@@ -366,9 +405,13 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       options.push({ name: t('globPattern', pattern.name), value: pattern.glob });
     }
     for (const branch of gitBranches.value) {
+      /** 只为本地分支标注未合并状态（远程分支名以 remotes/ 开头） */
+      const isLocal = !branch.startsWith('remotes/');
       options.push({
-        name: branch.startsWith('remotes/') ? branch.substring(8) : branch,
+        name: isLocal ? branch : branch.substring(8),
         value: branch,
+        hint: isLocal && unmergedBranches.value.includes(branch) ? 'unmerged' : undefined,
+        hintClass: isLocal && unmergedBranches.value.includes(branch) ? 'unmerged' : undefined,
       });
     }
     return options;
@@ -465,6 +508,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     gitRemotes.value = [];
     gitStashes.value = [];
     gitTags.value = [];
+    unmergedBranches.value = [];
     currentBranches.value = null;
     currentAuthors.value = null;
     currentTags.value = null;
@@ -479,8 +523,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     remotes: ReadonlyArray<string>,
     stashes: ReadonlyArray<GG.GitStash>,
     isRepo: boolean,
+    newUnmergedBranches: ReadonlyArray<string>,
   ) {
     gitStashes.value = stashes;
+    unmergedBranches.value = newUnmergedBranches;
 
     if (
       !isRepo ||
@@ -755,7 +801,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     if (msg.error === null) {
       const rs = refreshState.value;
       if (rs.inProgress && rs.loadRepoInfoRefreshId === msg.refreshId) {
-        loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.stashes, msg.isRepo);
+        loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.stashes, msg.isRepo, msg.unmergedBranches);
       }
     } else {
       displayLoadDataError(t('unableLoadRepoInfo'), msg.error);
@@ -816,6 +862,8 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
 
   function requestLoadRepoInfo() {
     const repoState = gitRepos.value[currentRepo.value];
+    /** enabled 为 false 时不传 unmergedBaseBranch，后端跳过计算 */
+    const unmergedEnabled = config.value.unmergedBranches?.enabled ?? true;
     sendMessage({
       command: 'loadRepoInfo',
       repo: currentRepo.value,
@@ -823,7 +871,16 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       showRemoteBranches: getShowRemoteBranches(repoState.showRemoteBranchesV2),
       showStashes: getShowStashes(repoState.showStashes, config.value.showStashes),
       hideRemotes: repoState.hideRemotes,
+      ...(unmergedEnabled ? { unmergedBaseBranch: unmergedBaseBranch.value } : {}),
     } as GG.RequestMessage);
+  }
+
+  /** 切换基准分支并刷新未合并列表 */
+  function setUnmergedBaseBranch(branch: string) {
+    if (unmergedBaseBranch.value === branch) return;
+    unmergedBaseBranch.value = branch;
+    /** 走标准刷新流程，确保 inProgress 被正确设置 */
+    requestLoadRepoInfoAndCommits(false, false);
   }
 
   function requestLoadCommits() {
@@ -1847,7 +1904,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
           addTagMsg.pushToRemote !== null &&
           addTagMsg.errors.length === 2 &&
           addTagMsg.errors[0] === null &&
-          isExtensionErrorInfo(addTagMsg.errors[1], GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote)
+          isExtensionErrorInfo(
+            addTagMsg.errors[1],
+            GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote,
+          )
         ) {
           refresh(false);
           handleResponsePushTagCommitNotOnRemote(
@@ -1866,7 +1926,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
         const pushTagMsg = msg as GG.ResponsePushTag;
         if (
           pushTagMsg.errors.length === 1 &&
-          isExtensionErrorInfo(pushTagMsg.errors[0], GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote)
+          isExtensionErrorInfo(
+            pushTagMsg.errors[0],
+            GG.ErrorInfoExtensionPrefix.PushTagCommitNotOnRemote,
+          )
         ) {
           handleResponsePushTagCommitNotOnRemote(
             pushTagMsg.repo,
@@ -1941,21 +2004,33 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       }
       case 'pushBranch': {
         const pushMsg = msg as GG.ResponsePushBranch;
-        refreshAndDisplayErrors(pushMsg.errors, 'Unable to Push Branch', pushMsg.willUpdateBranchConfig);
+        refreshAndDisplayErrors(
+          pushMsg.errors,
+          'Unable to Push Branch',
+          pushMsg.willUpdateBranchConfig,
+        );
         break;
       }
       case 'createPullRequest': {
         const prMsg = msg as GG.ResponseCreatePullRequest;
-        finishOrDisplayErrors(prMsg.errors, 'Unable to Create Pull Request', () => {
-          if (prMsg.push) refresh(false);
-        }, true);
+        finishOrDisplayErrors(
+          prMsg.errors,
+          'Unable to Create Pull Request',
+          () => {
+            if (prMsg.push) refresh(false);
+          },
+          true,
+        );
         break;
       }
       case 'createBranch':
         refreshAndDisplayErrors((msg as GG.ResponseCreateBranch).errors, 'Unable to Create Branch');
         break;
       case 'cherrypickCommit':
-        refreshAndDisplayErrors((msg as GG.ResponseCherrypickCommit).errors, 'Unable to Cherry Pick Commit');
+        refreshAndDisplayErrors(
+          (msg as GG.ResponseCherrypickCommit).errors,
+          'Unable to Cherry Pick Commit',
+        );
         break;
       case 'applyStash':
         refreshOrDisplayError(msg.error, 'Unable to Apply Stash');
@@ -2051,7 +2126,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
         finishOrDisplayError(msg.error, 'Unable to Open External Directory Diff', true);
         break;
       case 'copyToClipboard':
-        finishOrDisplayError(msg.error, 'Unable to Copy ' + (msg as GG.ResponseCopyToClipboard).type + ' to Clipboard');
+        finishOrDisplayError(
+          msg.error,
+          'Unable to Copy ' + (msg as GG.ResponseCopyToClipboard).type + ' to Clipboard',
+        );
         break;
       case 'copyFilePath':
         finishOrDisplayError(msg.error, 'Unable to Copy File Path to Clipboard');
@@ -2060,10 +2138,20 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
         finishOrDisplayError(msg.error, 'Unable to Create Archive', true);
         break;
       case 'deleteUserDetails':
-        finishOrDisplayErrors((msg as GG.ResponseDeleteUserDetails).errors, 'Unable to Remove Git User Details', () => requestLoadConfig(), true);
+        finishOrDisplayErrors(
+          (msg as GG.ResponseDeleteUserDetails).errors,
+          'Unable to Remove Git User Details',
+          () => requestLoadConfig(),
+          true,
+        );
         break;
       case 'editUserDetails':
-        finishOrDisplayErrors((msg as GG.ResponseEditUserDetails).errors, 'Unable to Save Git User Details', () => requestLoadConfig(), true);
+        finishOrDisplayErrors(
+          (msg as GG.ResponseEditUserDetails).errors,
+          'Unable to Save Git User Details',
+          () => requestLoadConfig(),
+          true,
+        );
         break;
       case 'setGlobalViewState':
         finishOrDisplayError(msg.error, 'Unable to save the Global View State');
@@ -2090,7 +2178,11 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     return { error, partialOrCompleteSuccess };
   }
 
-  function refreshOrDisplayError(error: GG.ErrorInfo, errorMessage: string, configChanges: boolean = false) {
+  function refreshOrDisplayError(
+    error: GG.ErrorInfo,
+    errorMessage: string,
+    configChanges: boolean = false,
+  ) {
     if (error === null) {
       refresh(false, configChanges);
     } else {
@@ -2098,7 +2190,11 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     }
   }
 
-  function refreshAndDisplayErrors(errors: GG.ErrorInfo[], errorMessage: string, configChanges: boolean = false) {
+  function refreshAndDisplayErrors(
+    errors: GG.ErrorInfo[],
+    errorMessage: string,
+    configChanges: boolean = false,
+  ) {
     const reduced = reduceErrorInfos(errors);
     if (reduced.error !== null) {
       dialog.value?.showError(errorMessage, reduced.error, null, null);
@@ -2110,7 +2206,11 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     }
   }
 
-  function finishOrDisplayError(error: GG.ErrorInfo, errorMessage: string, dismissActionRunning: boolean = false) {
+  function finishOrDisplayError(
+    error: GG.ErrorInfo,
+    errorMessage: string,
+    dismissActionRunning: boolean = false,
+  ) {
     if (error !== null) {
       dialog.value?.showError(errorMessage, error, null, null);
     } else if (dismissActionRunning) {
@@ -2160,7 +2260,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       '<span class="messageContent">' +
       '<p style="margin:0 0 6px 0;">The tag <b><i>' +
       escapeHtml(tagName) +
-      '</i></b> is on a commit that isn\'t on any known branch on the remote' +
+      "</i></b> is on a commit that isn't on any known branch on the remote" +
       (remotesNotContainingCommit.length > 1 ? 's' : '') +
       ' ' +
       formatCommaSeparatedList(
@@ -4842,6 +4942,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
         prevState.gitRemotes,
         prevState.gitStashes,
         true,
+        [],
       );
       loadCommits(
         prevState.commits,
@@ -4901,6 +5002,12 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     gitRemotes,
     gitStashes,
     gitTags,
+    unmergedBranches,
+    unmergedBranchHeads,
+    unmergedBranchBarEnabled,
+    unmergedBranchBarExpanded,
+    unmergedBaseBranch,
+    setUnmergedBaseBranch,
     commits,
     commitHead,
     commitLookup,
@@ -5041,6 +5148,8 @@ export interface RefLabel {
   type: 'head' | 'remote' | 'tag' | 'stash';
   name: string;
   isActive?: boolean;
+  /** 本地分支未合并到 HEAD */
+  isUnmerged?: boolean;
   remote?: string | null;
   remotes?: string[];
   annotated?: boolean;

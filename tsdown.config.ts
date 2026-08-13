@@ -13,8 +13,6 @@ export default defineConfig({
   entry: [
     'src/extension.ts',
     'src/askpass/askpassMain.ts',
-    'src/life-cycle/startup.ts',
-    'src/life-cycle/uninstall.ts',
   ],
   format: 'cjs',
   outDir: 'out',

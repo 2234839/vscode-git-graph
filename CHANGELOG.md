@@ -2,6 +2,12 @@
 
 **Sponsor:** LogiCar VPN - "Freedom for goal of living a well-reasoned life". Break through the block in countries or regions like China mainland, Hong Kong, Russia, and Belarus with state-of-the-art encryption. Not only access Google/Gemini, but also AI models like ChatGPT and Claude AI. Visit [http://gcosaka.minzhi.online/](http://gcosaka.minzhi.online/). Welcome 3rd party ads to support long standing maintenance of this open source project!
 
+## [1.2.0] - 2026-08-13
+* Add unmerged branches detection feature: highlight branches not merged to a configurable base branch, with a quick navigation bar for jumping to unmerged branch heads.
+* Add settings: `git-graph.unmergedBranches.enabled` (master toggle), `.showBar`, `.maxBarEntries`, `.baseBranch`.
+* Fix extension settings quick-open using correct extension ID.
+* Remove life-cycle telemetry that sent install/update/uninstall events to third-party server.
+
 ## [1.37.15] - 2026-06-21
 * Fix extension activation failure caused by duplicated command registrations, ensuring Diff Views function correctly.
 
