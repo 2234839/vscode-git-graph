@@ -1,7 +1,7 @@
 {
 	"name": "guseng-graph",
 	"displayName": "Guseng Git History",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"publisher": "llej",
 	"engine": {
 		"node": "18.17.1"
