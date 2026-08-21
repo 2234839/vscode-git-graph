@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed, markRaw } from 'vue';
+import { ref, computed, markRaw, nextTick } from 'vue';
 import * as GG from 'backend-types';
 import { initI18n, t as translate } from '@/lib/i18n';
 import {
@@ -739,12 +739,55 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       dialog.value?.closeActionRunning();
       rs.inProgress = false;
     }
-    /** 动态设置 Graph SVG 的 Y 偏移，跳过表头高度 */
-    const headerElem = document.getElementById('tableColHeaders');
-    if (headerElem) {
-      config.value.graph.grid.offsetY = headerElem.offsetHeight + config.value.graph.grid.y / 2;
-    }
+    /** Graph SVG 渲染前同步网格尺寸（对齐原版 main.ts renderGraph 的逻辑） */
+    updateGridDimensions();
     finaliseRepoLoad(true);
+  }
+
+  /**
+   * 渲染 graph 前同步网格尺寸（翻译自原版 main.ts renderGraph）：
+   * - expandY = inline CDV 实际高度（或 cdvHeight）
+   * - grid.y = 由表格实际高度反推的行高（行内文字换行时行高可能 > rowHeight）
+   * - offsetY = 表头高度 + grid.y / 2
+   */
+  function updateGridDimensions() {
+    const grid = config.value.graph.grid;
+    const headerElem = document.getElementById('tableColHeaders');
+    const repoState = gitRepos.value[currentRepo.value];
+    if (!repoState) return;
+    const cdvHeight = repoState.cdvHeight;
+    const headerHeight = headerElem ? headerElem.offsetHeight + 1 : 0;
+    const expanded = isCdvDocked.value ? null : expandedCommit.value;
+    const cdvElem = expanded !== null ? document.getElementById('cdv') : null;
+
+    grid.expandY =
+      cdvElem !== null ? cdvElem.getBoundingClientRect().height : cdvHeight;
+    if (commits.value.length > 0 && tableElem !== null && tableElem.children.length > 0) {
+      const tableHeight = tableElem.children[0].clientHeight;
+      /** 只有量到有效高度才反推行高（表格尚未布局完成时 clientHeight 可能为 0，直接沿用原值） */
+      const derived =
+        (tableHeight - headerHeight - (expanded !== null ? cdvHeight : 0)) /
+        commits.value.length;
+      if (tableHeight > headerHeight && derived >= 8) {
+        grid.y = derived;
+      }
+    }
+    grid.offsetY = headerHeight + grid.y / 2;
+  }
+
+  /** 渲染 graph（先同步网格尺寸，再触发 SVG 渲染）。
+   * 必须等 Vue 把 DOM 更新完才能量表格/CDV 的真实高度，
+   * 因此内部 nextTick 去抖调度（多次连续调用只渲染一次） */
+  let renderGraphScheduled = false;
+  function renderGraph() {
+    if (currentRepo.value === null || renderGraphScheduled) return;
+    renderGraphScheduled = true;
+    nextTick(() => {
+      renderGraphScheduled = false;
+      if (currentRepo.value === null) return;
+      updateGridDimensions();
+      graph.value?.render(isCdvDocked.value ? null : expandedCommit.value);
+    });
   }
 
   function finaliseRepoLoad(didLoadRepoData: boolean) {
@@ -1117,7 +1160,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     expandedCommit.value = null;
     if (saveAndRender) {
       saveState();
-      graph.value?.render(null);
+      renderGraph();
     }
   }
 
@@ -1233,7 +1276,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
 
       if (repoState.cdvHeight !== height) {
         repoState.cdvHeight = height;
-        if (!docked) graph.value?.render(expandedCommit.value);
+        if (!docked) renderGraph();
       }
     };
     const stopResizingCdvHeight: EventListener = (ev) => {
@@ -4698,7 +4741,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     let windowHeight = window.outerHeight;
     window.addEventListener('resize', () => {
       if (windowWidth === window.outerWidth && windowHeight === window.outerHeight) {
-        graph.value?.render(expandedCommit.value);
+        renderGraph();
       } else {
         windowWidth = window.outerWidth;
         windowHeight = window.outerHeight;
@@ -5064,6 +5107,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     showCommitDetails,
     showCommitComparison,
     isCdvDocked,
+    renderGraph,
     cdvHeightPx,
     isCdvOpen,
     getNumColumns,

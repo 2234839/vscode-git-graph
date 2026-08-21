@@ -32,6 +32,17 @@ watch(() => store.commitHead, () => {
   });
 });
 
+/**
+ * 展开/收起 commit 详情（CDV）时重新渲染 graph。
+ * 走 store.renderGraph()：先同步 expandY / grid.y / offsetY，再渲染 SVG，
+ * 保证节点与 commit 行严格对齐（对齐原版 main.ts renderGraph 逻辑）。
+ */
+watch(() => [store.expandedCommit, store.isCdvDocked] as const, () => {
+  nextTick(() => {
+    store.renderGraph();
+  });
+});
+
 onMounted(() => {
   /* Graph 引擎在 store.initEngine 中初始化，这里只确保容器存在 */
 });
