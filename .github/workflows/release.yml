@@ -38,9 +38,9 @@ jobs:
         id: changelog
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          # 提取 CHANGELOG.md 中 "## [VERSION] ..." 到下一个 "## [" 之间的内容
+          # 提取 CHANGELOG.md 中 "## [VERSION] ..." 到下一个 "## [" 之间的内容（字符串前缀比较，避免正则字符类问题）
           awk -v ver="## [$VERSION]" '
-            $0 ~ "^" ver { found=1; next }
+            index($0, ver) == 1 { found=1; next }
             found && /^## \[/ { exit }
             found { print }
           ' CHANGELOG.md > release_notes.md
