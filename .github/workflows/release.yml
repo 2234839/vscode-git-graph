@@ -20,9 +20,13 @@ jobs:
           cache: 'npm'
 
       - name: 'Install Dependencies'
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
         run: |
           npm ci --legacy-peer-deps
           corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+          pnpm --version
           cd web-vue && pnpm install --frozen-lockfile
 
       - name: 'Compile & Package'
