@@ -2,6 +2,7 @@
 	"name": "guseng-graph",
 	"displayName": "Guseng Git History",
 	"version": "1.3.0",
+	"packageManager": "pnpm@10.30.3",
 	"publisher": "llej",
 	"engine": {
 		"node": "18.17.1"
