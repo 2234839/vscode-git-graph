@@ -20,7 +20,10 @@ jobs:
           cache: 'npm'
 
       - name: 'Install Dependencies'
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps
+          corepack enable
+          cd web-vue && pnpm install --frozen-lockfile
 
       - name: 'Compile & Package'
         run: |
