@@ -17,20 +17,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: 'Enable pnpm (corepack)'
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.30.3 --activate
-          pnpm --version
+          cache: 'npm'
 
       - name: 'Install Dependencies'
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 'Compile & Package'
         run: |
-          pnpm run compile
-          pnpm run package
+          npm run compile
+          npm run package
 
       - name: 'Extract Changelog'
         id: changelog
