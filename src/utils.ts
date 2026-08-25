@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { DiffSide, encodeDiffDocUri } from './diffDocProvider';
+import { DiffSide, encodeDiffDocUri, isBinaryFilePath } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { t } from './i18n';
 import {
@@ -555,13 +555,18 @@ export async function viewDiffWithWorkingFile(
 export function viewFileAtRevision(repo: string, hash: string, filePath: string) {
 	const pathComponents = filePath.split('/');
 	const title = abbrevCommit(hash) + ': ' + pathComponents[pathComponents.length - 1];
+	// Binary files (e.g. images) must keep their file extension in the URI path, so that
+	// VS Code opens them with the matching built-in viewer instead of the text editor.
+	const uri = isBinaryFilePath(filePath)
+		? encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New)
+		: encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New).with({
+				path: title
+			});
 
 	return vscode.commands
 		.executeCommand(
 			'vscode.open',
-			encodeDiffDocUri(repo, filePath, hash, GitFileStatus.Modified, DiffSide.New).with({
-				path: title
-			}),
+			uri,
 			{
 				preview: true,
 				viewColumn: getConfig().openNewTabEditorGroup

@@ -14,7 +14,7 @@ import * as GG from 'backend-types';
 import { useGitGraphStore } from '@/stores/gitGraph';
 import { SVG_ICONS, GIT_SIGNATURE_STATUS_DESCRIPTIONS, CLASS_PENDING_REVIEW } from '@/lib/constants';
 import { CLASS_CONTEXT_MENU_ACTIVE } from '@/lib/contextMenu';
-import { formatLongDate } from '@/lib/utils';
+import { formatLongDate, isBinaryFilePath } from '@/lib/utils';
 import { TextFormatter, CLASS_EXTERNAL_URL, CLASS_INTERNAL_URL } from '@/lib/textFormatter';
 import { UNCOMMITTED, type FileTreeFolder } from '@/types';
 import IconSvg from './IconSvg.vue';
@@ -166,7 +166,8 @@ const flatFileList = computed<FlatFileItem[]>(() => {
       } else if (cur.type === 'file') {
         const file = fileChanges[cur.index];
         const diffPossible = file.type === GG.GitFileStatus.Untracked ||
-          (file.additions !== null && file.deletions !== null);
+          (file.additions !== null && file.deletions !== null) ||
+          isBinaryFilePath(file.newFilePath);
         const baseType = typeMap[file.type] ?? file.type;
         const changeTypeMessage = file.type === GG.GitFileStatus.Renamed
           ? baseType + ' (' + file.oldFilePath + ' → ' + file.newFilePath + ')'
@@ -207,7 +208,7 @@ function fileDiffTooltip(item: FlatFileItem): string {
   if (!item.file) return '';
   const diffMsg = item.diffPossible
     ? 'Click to View Diff'
-    : 'Unable to View Diff' + (item.file.type !== GG.GitFileStatus.Deleted ? ' (this is a binary file)' : '');
+    : 'Unable to View Diff' + (item.file.type === GG.GitFileStatus.Deleted ? '' : ' (this is a binary file)');
   return diffMsg + ' • ' + item.changeTypeMessage;
 }
 

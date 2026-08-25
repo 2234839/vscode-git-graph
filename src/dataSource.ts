@@ -757,6 +757,17 @@ export class DataSource extends Disposable {
     });
   }
 
+  /**
+   * Get the raw (binary-safe) contents of a file at a specific revision.
+   * @param repo The path of the repository.
+   * @param commitHash The commit hash specifying the revision of the file.
+   * @param filePath The path of the file relative to the repositories root.
+   * @returns The raw file contents as a Buffer.
+   */
+  public getCommitFileRaw(repo: string, commitHash: string, filePath: string) {
+    return this._spawnGit(['show', commitHash + ':' + filePath], repo, (stdout) => stdout);
+  }
+
   /* Get Data Methods - General */
 
   /**

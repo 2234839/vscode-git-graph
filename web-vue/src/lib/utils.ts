@@ -18,6 +18,20 @@ import { UNCOMMITTED } from '../types';
 
 /* General Helpers */
 
+/** 常见二进制文件扩展名（与扩展端 BinaryDocProvider 保持一致），此类文件用 VSCode 内置查看器打开 */
+const BINARY_EXTENSIONS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'avif', 'tiff', 'tif',
+  'pdf', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'webm', 'mov', 'avi', 'mkv',
+  'woff', 'woff2', 'ttf', 'otf', 'eot', 'zip', 'gz', 'tar', 'jar', 'doc',
+  'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'exe', 'dll', 'so', 'dylib', 'class', 'wasm',
+]);
+
+/** 根据扩展名判断文件是否为二进制文件（可被内置查看器渲染） */
+export function isBinaryFilePath(filePath: string): boolean {
+  const ext = filePath.split('.').pop();
+  return ext !== undefined && BINARY_EXTENSIONS.has(ext.toLowerCase());
+}
+
 export function arraysEqual<T>(
   a: ReadonlyArray<T>,
   b: ReadonlyArray<T>,

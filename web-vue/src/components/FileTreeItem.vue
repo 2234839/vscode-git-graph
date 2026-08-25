@@ -13,6 +13,7 @@ import { computed } from 'vue';
 import * as GG from 'backend-types';
 import { useGitGraphStore } from '@/stores/gitGraph';
 import { CLASS_PENDING_REVIEW } from '@/lib/constants';
+import { isBinaryFilePath } from '@/lib/utils';
 import { CLASS_CONTEXT_MENU_ACTIVE } from '@/lib/contextMenu';
 import { type FileTreeNode, type FileTreeFolder, type FileTreeFile } from '@/types';
 import IconSvg from './IconSvg.vue';
@@ -81,10 +82,11 @@ function getFileChange(leaf: FileTreeFile): GG.GitFileChange | null {
   return ec.value.fileChanges[leaf.index];
 }
 
-/** 判断文件是否可以 diff */
+/** 判断文件是否可以 diff（二进制文件可由扩展端内置查看器渲染） */
 function isDiffPossible(file: GG.GitFileChange): boolean {
   return file.type === GG.GitFileStatus.Untracked ||
-    (file.additions !== null && file.deletions !== null);
+    (file.additions !== null && file.deletions !== null) ||
+    isBinaryFilePath(file.newFilePath);
 }
 
 /** 文件变更类型描述 */

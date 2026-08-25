@@ -2,6 +2,9 @@
 
 **Sponsor:** LogiCar VPN - "Freedom for goal of living a well-reasoned life". Break through the block in countries or regions like China mainland, Hong Kong, Russia, and Belarus with state-of-the-art encryption. Not only access Google/Gemini, but also AI models like ChatGPT and Claude AI. Visit [http://gcosaka.minzhi.online/](http://gcosaka.minzhi.online/). Welcome 3rd party ads to support long standing maintenance of this open source project!
 
+## [1.3.0] - 2026-08-25
+* Add binary file viewing support: commit detail file changes for binary files (images, PDFs, audio/video, fonts, office documents and 40+ more extensions) now open with VS Code's built-in viewers via a read-only `FileSystemProvider` (`git-graph-bin://`), instead of being unclickable or shown as garbled text. Image diffs between two revisions are supported.
+
 ## [1.2.0] - 2026-08-13
 * Add unmerged branches detection feature: highlight branches not merged to a configurable base branch, with a quick navigation bar for jumping to unmerged branch heads.
 * Add settings: `git-graph.unmergedBranches.enabled` (master toggle), `.showBar`, `.maxBarEntries`, `.baseBranch`.

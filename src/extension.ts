@@ -3,7 +3,7 @@ import { AvatarManager } from './avatarManager';
 import { CommandManager } from './commands';
 import { getConfig } from './config';
 import { DataSource } from './dataSource';
-import { DiffDocProvider } from './diffDocProvider';
+import { BinaryDocProvider, DiffDocProvider } from './diffDocProvider';
 import { ExtensionState } from './extensionState';
 import { initI18nBackend, t } from './i18n';
 import { Logger } from './logger';
@@ -74,9 +74,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		logger
 	);
 	const diffDocProvider = new DiffDocProvider(dataSource);
+	const binaryDocProvider = new BinaryDocProvider(dataSource);
 
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider(DiffDocProvider.scheme, diffDocProvider),
+		vscode.workspace.registerFileSystemProvider(BinaryDocProvider.scheme, binaryDocProvider),
 		vscode.workspace.onDidChangeConfiguration((event) => {
 			if (event.affectsConfiguration('git-graph')) {
 				initI18nBackend();

@@ -54,6 +54,7 @@ import {
   abbrevCommit,
   escapeHtml,
   unescapeHtml,
+  isBinaryFilePath,
   formatCommaSeparatedList,
   SVG_ICONS,
   findCommitElemWithId,
@@ -1555,7 +1556,8 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     };
     const diffPossible =
       file.type === GG.GitFileStatus.Untracked ||
-      (file.additions !== null && file.deletions !== null);
+      (file.additions !== null && file.deletions !== null) ||
+      isBinaryFilePath(file.newFilePath);
     const fileExistsAtThisRevision = file.type !== GG.GitFileStatus.Deleted && !isUncommitted;
     const fileExistsAtThisRevisionAndDiffPossible = fileExistsAtThisRevision && diffPossible;
     const codeReviewInProgressAndNotReviewed =
@@ -2452,13 +2454,14 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     const refName = target.ref;
     const visibility = config.value.contextMenuActionsVisibility.branch;
     const isSelectedInBranchesDropdown = branchDropdown.value?.isSelected(refName) ?? false;
+    const upstreamRemote = gitConfig.value?.branches[refName]?.remote ?? null;
 
     return [
       [
         {
           title: t('checkoutBranch'),
           visible: visibility.checkout && gitBranchHead.value !== refName,
-          onClick: () => checkoutBranchAction(refName, null, null, target),
+          onClick: () => checkoutBranchAction(refName, upstreamRemote, null, target),
         },
         {
           title: t('compareDots'),
@@ -4388,9 +4391,10 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       ref: refName,
       elem: sourceElem,
     };
+    const upstreamRemote = isHead ? (gitConfig.value?.branches[refName]?.remote ?? null) : null;
     checkoutBranchAction(
       refName,
-      isHead ? null : (
+      isHead ? upstreamRemote : (
         unescapeHtml((isRemoteCombinedWithHead ? eventTarget : refElem).dataset.remote || '')
       ),
       null,

@@ -36,6 +36,7 @@
 
 ### ✨ 功能增强
 
+- **二进制文件查看**：原项目对二进制文件（图片等）无法查看 diff（提示 "this is a binary file"），本项目通过只读 `FileSystemProvider`（`git-graph-bin://`）直接返回 `git show` 的原始字节，让 VS Code 用内置查看器打开任意历史版本/其他分支的图片、PDF、音视频、字体等 40+ 种二进制格式，diff 视图还支持图片左右对比
 - **历史搜索**：新增 `Search Commits in History...` 命令，支持按 message/author/hash 搜索整个仓库历史
 - **标签增强**：标签自动递增、远程标签显示、Push to remote 默认选项
 - **上下文菜单增强**：Edit Message、Reset Last Commit (Soft)、Create Branch、Pull Branch 等
