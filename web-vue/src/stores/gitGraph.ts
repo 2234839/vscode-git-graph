@@ -2454,14 +2454,15 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     const refName = target.ref;
     const visibility = config.value.contextMenuActionsVisibility.branch;
     const isSelectedInBranchesDropdown = branchDropdown.value?.isSelected(refName) ?? false;
-    const upstreamRemote = gitConfig.value?.branches[refName]?.remote ?? null;
 
     return [
       [
         {
           title: t('checkoutBranch'),
           visible: visibility.checkout && gitBranchHead.value !== refName,
-          onClick: () => checkoutBranchAction(refName, upstreamRemote, null, target),
+          // 本地分支直接检出；remote 参数仅用于远程分支（会按 remote 前缀截断 refName 弹新分支名输入框），
+          // 传入 upstreamRemote 会导致本地分支名被错误截断
+          onClick: () => checkoutBranchAction(refName, null, null, target),
         },
         {
           title: t('compareDots'),
