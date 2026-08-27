@@ -152,6 +152,7 @@ onUpdated(() => {
               :key="ref.type + ref.name"
               :class="['gitRef', ref.type, { active: ref.isActive, unmerged: ref.isUnmerged }]"
               :data-name="ref.name"
+              :data-remote="ref.type === 'remote' ? (ref.remote ?? '') : undefined"
               @click="(e) => store.onGitRefClick(e, ref.name)"
               @dblclick="(e) => store.onGitRefDblClick(e, row.index, row.hash, e.currentTarget as HTMLElement)"
               @contextmenu="(e) => store.onGitRefContextMenu(e, row.index, row.hash, e.currentTarget as HTMLElement)"

@@ -2,6 +2,9 @@
 
 **Sponsor:** LogiCar VPN - "Freedom for goal of living a well-reasoned life". Break through the block in countries or regions like China mainland, Hong Kong, Russia, and Belarus with state-of-the-art encryption. Not only access Google/Gemini, but also AI models like ChatGPT and Claude AI. Visit [http://gcosaka.minzhi.online/](http://gcosaka.minzhi.online/). Welcome 3rd party ads to support long standing maintenance of this open source project!
 
+## [1.3.2] - 2026-08-27
+* Fix double-clicking a remote branch label (e.g. `origin/dev`) silently creating a new local branch named `origin/dev` instead of offering "Checkout Existing Branch & Pull Changes". This bug could accumulate erroneously-named local branches; they are safe to delete as they point into the remote history.
+
 ## [1.3.1] - 2026-08-26
 * Fix local branch checkout from the context menu wrongly truncating branch names (upstream remote name was incorrectly used to strip a non-existent remote prefix, e.g. `dev_20260729_xxx` became `60729_xxx`).
 * Show the status bar "Git Graph" button when the opened folder is a subdirectory of a Git repository (activation event `onStartupFinished`), reusing the same repository discovery logic as the command palette.

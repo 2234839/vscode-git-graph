@@ -54,7 +54,6 @@ import {
   abbrevCommit,
   escapeHtml,
   unescapeHtml,
-  isBinaryFilePath,
   formatCommaSeparatedList,
   SVG_ICONS,
   findCommitElemWithId,
@@ -761,14 +760,12 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     const expanded = isCdvDocked.value ? null : expandedCommit.value;
     const cdvElem = expanded !== null ? document.getElementById('cdv') : null;
 
-    grid.expandY =
-      cdvElem !== null ? cdvElem.getBoundingClientRect().height : cdvHeight;
+    grid.expandY = cdvElem !== null ? cdvElem.getBoundingClientRect().height : cdvHeight;
     if (commits.value.length > 0 && tableElem !== null && tableElem.children.length > 0) {
       const tableHeight = tableElem.children[0].clientHeight;
       /** 只有量到有效高度才反推行高（表格尚未布局完成时 clientHeight 可能为 0，直接沿用原值） */
       const derived =
-        (tableHeight - headerHeight - (expanded !== null ? cdvHeight : 0)) /
-        commits.value.length;
+        (tableHeight - headerHeight - (expanded !== null ? cdvHeight : 0)) / commits.value.length;
       if (tableHeight > headerHeight && derived >= 8) {
         grid.y = derived;
       }
@@ -845,7 +842,14 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     if (msg.error === null) {
       const rs = refreshState.value;
       if (rs.inProgress && rs.loadRepoInfoRefreshId === msg.refreshId) {
-        loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.stashes, msg.isRepo, msg.unmergedBranches);
+        loadRepoInfo(
+          msg.branches,
+          msg.head,
+          msg.remotes,
+          msg.stashes,
+          msg.isRepo,
+          msg.unmergedBranches,
+        );
       }
     } else {
       displayLoadDataError(t('unableLoadRepoInfo'), msg.error);
@@ -1556,8 +1560,7 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
     };
     const diffPossible =
       file.type === GG.GitFileStatus.Untracked ||
-      (file.additions !== null && file.deletions !== null) ||
-      isBinaryFilePath(file.newFilePath);
+      (file.additions !== null && file.deletions !== null);
     const fileExistsAtThisRevision = file.type !== GG.GitFileStatus.Deleted && !isUncommitted;
     const fileExistsAtThisRevisionAndDiffPossible = fileExistsAtThisRevision && diffPossible;
     const codeReviewInProgressAndNotReviewed =
@@ -2460,8 +2463,6 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
         {
           title: t('checkoutBranch'),
           visible: visibility.checkout && gitBranchHead.value !== refName,
-          // 本地分支直接检出；remote 参数仅用于远程分支（会按 remote 前缀截断 refName 弹新分支名输入框），
-          // 传入 upstreamRemote 会导致本地分支名被错误截断
           onClick: () => checkoutBranchAction(refName, null, null, target),
         },
         {
@@ -4392,10 +4393,9 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       ref: refName,
       elem: sourceElem,
     };
-    const upstreamRemote = isHead ? (gitConfig.value?.branches[refName]?.remote ?? null) : null;
     checkoutBranchAction(
       refName,
-      isHead ? upstreamRemote : (
+      isHead ? null : (
         unescapeHtml((isRemoteCombinedWithHead ? eventTarget : refElem).dataset.remote || '')
       ),
       null,
