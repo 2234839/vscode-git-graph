@@ -21,14 +21,14 @@ const graphContainer = ref<HTMLElement | null>(null);
  */
 watch(() => store.commits, () => {
   nextTick(() => {
-    store.graph?.render(store.expandedCommit);
+    store.renderGraph();
   });
 }, { deep: false });
 
 /** 监听 commitHead 变化 */
 watch(() => store.commitHead, () => {
   nextTick(() => {
-    store.graph?.render(store.expandedCommit);
+    store.renderGraph();
   });
 });
 

@@ -739,8 +739,8 @@ export const useGitGraphStore = defineStore('gitGraph', () => {
       dialog.value?.closeActionRunning();
       rs.inProgress = false;
     }
-    /** Graph SVG 渲染前同步网格尺寸（对齐原版 main.ts renderGraph 的逻辑） */
-    updateGridDimensions();
+    /* commits 变化后必须等 Vue 更新完表格 DOM 再量行高，走 renderGraph 内部的 nextTick 调度 */
+    renderGraph();
     finaliseRepoLoad(true);
   }
 

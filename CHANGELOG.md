@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.3.3] - 2026-10-09
+* Fix the commit graph nodes misaligning with the commit table rows, with the offset accumulating as the view scrolled or more commits were loaded (e.g. the last row could be off by thousands of pixels after "Load More Commits" or switching to a branch with fewer commits). The graph grid row height was derived from the stale table height before the new rows had been rendered; grid re-measurement now happens after the DOM update and all graph render paths share a single entry point.
+
 **Sponsor:** LogiCar VPN - "Freedom for goal of living a well-reasoned life". Break through the block in countries or regions like China mainland, Hong Kong, Russia, and Belarus with state-of-the-art encryption. Not only access Google/Gemini, but also AI models like ChatGPT and Claude AI. Visit [http://gcosaka.minzhi.online/](http://gcosaka.minzhi.online/). Welcome 3rd party ads to support long standing maintenance of this open source project!
 
 ## [1.3.2] - 2026-08-27
