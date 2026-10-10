@@ -14,10 +14,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12.x'
-    - run: npm install
-    - run: npm run compile
-    - run: npm run test
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: 'Install Dependencies'
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+        run: |
+          npm ci --legacy-peer-deps
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+          pnpm --version
+          cd web-vue && pnpm install --frozen-lockfile
+
+      - run: npm run compile
+
+      - run: npm run test
