@@ -37,7 +37,10 @@ jobs:
         run: |
           set -o pipefail
           npm run test 2>&1 | tee /tmp/jest.log || {
-            grep -aE '●|✕|Tests:|Test Suites:' /tmp/jest.log | head -40 | while IFS= read -r line; do
+            grep -aA5 'Test suite failed to run' /tmp/jest.log | head -60 | while IFS= read -r line; do
+              echo "::error::${line:0:180}"
+            done
+            grep -aE 'FAIL|Tests:|Test Suites:' /tmp/jest.log | head -10 | while IFS= read -r line; do
               echo "::error::${line:0:180}"
             done
             exit 1
