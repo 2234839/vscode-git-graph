@@ -393,7 +393,7 @@ describe('GitGraphView', () => {
 				// Assert
 				const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
 				expect(mockedWebviewPanel.mocks.messages).toHaveLength(0);
-				expect(mockedWebviewPanel.panel.webview.html).toContain('No Git repositories were found');
+				expect(mockedWebviewPanel.panel.webview.html).toContain('Git Graph did not find any Git repositories');
 			});
 
 			it('Should transition from no repositories correctly', () => {
@@ -2334,6 +2334,7 @@ describe('GitGraphView', () => {
 					remotes: ['origin', 'upstream'],
 					stashes: [],
 					tags: [],
+					unmergedBranches: [],
 					error: null
 				};
 				const spyOnGetRepoInfo = jest.spyOn(dataSource, 'getRepoInfo');
@@ -2356,7 +2357,7 @@ describe('GitGraphView', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream']);
+					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream'], 'HEAD');
 					expect(spyOnRepoRoot).not.toHaveBeenCalled();
 					expect(spyOnSetLastActiveRepo).toHaveBeenCalledWith('/path/to/repo');
 					expect(spyOnRepoFileWatcherStart).toHaveBeenCalledWith('/path/to/repo');
@@ -2369,6 +2370,7 @@ describe('GitGraphView', () => {
 							remotes: getRepoInfoResolvedValue.remotes,
 							stashes: getRepoInfoResolvedValue.stashes,
 							tags: getRepoInfoResolvedValue.tags,
+							unmergedBranches: getRepoInfoResolvedValue.unmergedBranches,
 							isRepo: true,
 							error: getRepoInfoResolvedValue.error
 						}
@@ -2386,6 +2388,7 @@ describe('GitGraphView', () => {
 					remotes: ['origin', 'upstream'],
 					stashes: [],
 					tags: [],
+					unmergedBranches: [],
 					error: null
 				};
 				const spyOnGetRepoInfo = jest.spyOn(dataSource, 'getRepoInfo');
@@ -2407,7 +2410,7 @@ describe('GitGraphView', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream']);
+					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream'], 'HEAD');
 					expect(spyOnRepoRoot).not.toHaveBeenCalled();
 					expect(spyOnSetLastActiveRepo).not.toHaveBeenCalled();
 					expect(spyOnRepoFileWatcherStart).not.toHaveBeenCalled();
@@ -2420,6 +2423,7 @@ describe('GitGraphView', () => {
 							remotes: getRepoInfoResolvedValue.remotes,
 							stashes: getRepoInfoResolvedValue.stashes,
 							tags: getRepoInfoResolvedValue.tags,
+							unmergedBranches: getRepoInfoResolvedValue.unmergedBranches,
 							isRepo: true,
 							error: getRepoInfoResolvedValue.error
 						}
@@ -2437,6 +2441,7 @@ describe('GitGraphView', () => {
 					remotes: ['origin', 'upstream'],
 					stashes: [],
 					tags: [],
+					unmergedBranches: [],
 					error: 'error message'
 				};
 				const spyOnGetRepoInfo = jest.spyOn(dataSource, 'getRepoInfo');
@@ -2459,7 +2464,7 @@ describe('GitGraphView', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream']);
+					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream'], 'HEAD');
 					expect(spyOnRepoRoot).toHaveBeenCalledWith('/path/to/repo');
 					expect(spyOnSetLastActiveRepo).not.toHaveBeenCalled();
 					expect(spyOnRepoFileWatcherStart).not.toHaveBeenCalled();
@@ -2472,6 +2477,7 @@ describe('GitGraphView', () => {
 							remotes: getRepoInfoResolvedValue.remotes,
 							stashes: getRepoInfoResolvedValue.stashes,
 							tags: getRepoInfoResolvedValue.tags,
+							unmergedBranches: getRepoInfoResolvedValue.unmergedBranches,
 							isRepo: true,
 							error: getRepoInfoResolvedValue.error
 						}
@@ -2489,6 +2495,7 @@ describe('GitGraphView', () => {
 					remotes: ['origin', 'upstream'],
 					stashes: [],
 					tags: [],
+					unmergedBranches: [],
 					error: 'error message'
 				};
 				const spyOnGetRepoInfo = jest.spyOn(dataSource, 'getRepoInfo');
@@ -2511,7 +2518,7 @@ describe('GitGraphView', () => {
 
 				// Assert
 				await waitForExpect(() => {
-					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream']);
+					expect(spyOnGetRepoInfo).toHaveBeenCalledWith('/path/to/repo', true, false, ['upstream'], 'HEAD');
 					expect(spyOnRepoRoot).toHaveBeenCalledWith('/path/to/repo');
 					expect(spyOnSetLastActiveRepo).not.toHaveBeenCalled();
 					expect(spyOnRepoFileWatcherStart).not.toHaveBeenCalled();
@@ -2524,6 +2531,7 @@ describe('GitGraphView', () => {
 							remotes: getRepoInfoResolvedValue.remotes,
 							stashes: getRepoInfoResolvedValue.stashes,
 							tags: getRepoInfoResolvedValue.tags,
+							unmergedBranches: getRepoInfoResolvedValue.unmergedBranches,
 							isRepo: false,
 							error: null
 						}
@@ -3662,7 +3670,7 @@ describe('GitGraphView', () => {
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
-			expect(mockedWebviewPanel.panel.webview.html).toContain('<h2>Unable to load Git Graph</h2>');
+			expect(mockedWebviewPanel.panel.webview.html).toContain('<h2>Unable to Load Git Graph</h2>');
 			expect(mockedWebviewPanel.panel.webview.html).toContain(utils.UNABLE_TO_FIND_GIT_MSG);
 		});
 
@@ -3675,8 +3683,8 @@ describe('GitGraphView', () => {
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
-			expect(mockedWebviewPanel.panel.webview.html).toContain('<h2>Unable to load Git Graph</h2>');
-			expect(mockedWebviewPanel.panel.webview.html).toContain('No Git repositories were found in the current workspace when it was last scanned by Git Graph.');
+			expect(mockedWebviewPanel.panel.webview.html).toContain('<h2>Unable to Load Git Graph</h2>');
+			expect(mockedWebviewPanel.panel.webview.html).toContain('Git Graph did not find any Git repositories in the current workspace when it was last scanned.');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<script nonce="1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d">');
 		});
 
@@ -3690,7 +3698,7 @@ describe('GitGraphView', () => {
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
-			expect(mockedWebviewPanel.panel.webview.html).toContain('<div id="view" tabindex="-1">');
+			expect(mockedWebviewPanel.panel.webview.html).toContain('<div id="app"');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<script nonce="1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d">');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<script nonce="1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d" src="vscode-webview-resource://file///path/to/extension/media/out.min.js"></script>');
 			expect(spyOnIsAvatarStorageAvailable).not.toHaveBeenCalled();
@@ -3706,7 +3714,7 @@ describe('GitGraphView', () => {
 
 			// Assert
 			const mockedWebviewPanel = vscode.getMockedWebviewPanel(0);
-			expect(mockedWebviewPanel.panel.webview.html).toContain('<div id="view" tabindex="-1">');
+			expect(mockedWebviewPanel.panel.webview.html).toContain('<div id="app"');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<script nonce="1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d">');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<script nonce="1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d" src="vscode-webview-resource://file///path/to/extension/media/out.min.js"></script>');
 			expect(spyOnIsAvatarStorageAvailable).toHaveBeenCalledWith();

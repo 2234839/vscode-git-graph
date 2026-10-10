@@ -159,7 +159,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -206,7 +206,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -238,9 +238,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.date.type'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
-
-			// Assert
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, [], 'HEAD');
 			expect(result).toStrictEqual({
 				branches: ['develop', 'master'],
 				head: 'develop',
@@ -270,9 +268,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.dateType'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
-
-			// Assert
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, [], 'HEAD');
 			expect(result).toStrictEqual({
 				branches: ['develop', 'master'],
 				head: 'develop',
@@ -302,9 +298,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.repository.useMailmap'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
-
-			// Assert
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, [], 'HEAD');
 			expect(result).toStrictEqual({
 				branches: ['develop', 'master'],
 				head: 'develop',
@@ -334,9 +328,7 @@ describe('DataSource', () => {
 			onDidChangeConfiguration.emit({
 				affectsConfiguration: (section) => section === 'git-graph.useMailmap'
 			});
-			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, []);
-
-			// Assert
+			const result = await dataSource.getRepoInfo('/path/to/repo', false, true, [], 'HEAD');
 			expect(result).toStrictEqual({
 				branches: ['develop', 'master'],
 				head: 'develop',
@@ -358,7 +350,7 @@ describe('DataSource', () => {
 			mockGitSuccessOnce('origin\n');
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, false, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, false, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -387,7 +379,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, ['origin']);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, ['origin'], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -416,7 +408,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', false);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -439,7 +431,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -462,7 +454,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -485,7 +477,7 @@ describe('DataSource', () => {
 			vscode.mockExtensionSettingReturnValue('repository.showRemoteHeads', true);
 
 			// Run
-			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, []);
+			const result = await dataSource.getRepoInfo('/path/to/repo', true, true, [], 'HEAD');
 
 			// Assert
 			expect(result).toStrictEqual({
@@ -5390,6 +5382,7 @@ describe('DataSource', () => {
 	describe('fetchIntoLocalBranch', () => {
 		it('Should fetch a remote branch into a local branch', async () => {
 			// Setup
+			mockGitSuccessOnce('master\n');
 			mockGitSuccessOnce();
 
 			// Run
@@ -5402,6 +5395,7 @@ describe('DataSource', () => {
 
 		it('Should (force) fetch a remote branch into a local branch', async () => {
 			// Setup
+			mockGitSuccessOnce('master\n');
 			mockGitSuccessOnce();
 
 			// Run
@@ -5417,10 +5411,18 @@ describe('DataSource', () => {
 			mockGitThrowingErrorOnce();
 
 			// Run
-			const result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
+			let result: string | null = null;
+			let thrownError: string | null = null;
+			try {
+				result = await dataSource.fetchIntoLocalBranch('/path/to/repo', 'origin', 'master', 'develop', false);
+			} catch (e) {
+				thrownError = e;
+			}
 
 			// Assert
-			expect(result).toBe('error message');
+			expect(result).toBe(null);
+			expect(thrownError).toBe('error message');
+			expect(spyOnSpawn).toBeCalledWith('/path/to/git', ['symbolic-ref', '--short', 'HEAD'], expect.objectContaining({ cwd: '/path/to/repo' }));
 		});
 	});
 

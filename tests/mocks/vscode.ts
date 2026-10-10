@@ -178,6 +178,7 @@ export const workspace = {
 		dispose: jest.fn()
 	})),
 	getConfiguration: jest.fn(() => mocks.workspaceConfiguration),
+	onDidChangeConfiguration: jest.fn((_: (e: unknown) => void) => ({ dispose: jest.fn() })),
 	onDidChangeWorkspaceFolders: jest.fn((_: () => Promise<void>) => ({ dispose: jest.fn() })),
 	onDidCloseTextDocument: jest.fn((_: () => void) => ({ dispose: jest.fn() })),
 	workspaceFolders: <{ uri: Uri, index: number }[] | undefined>undefined
